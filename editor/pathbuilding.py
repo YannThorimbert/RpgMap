@@ -161,7 +161,7 @@ def add_river_greedy(me, lm, material_dict, imgs, rounded_river,
         lm.static_objects.append(c)
 
     if actual_path:
-        print("RIVER BUILT:", [cell.coord for cell in actual_path])
+##        print("RIVER BUILT:", [cell.coord for cell in actual_path])
         if not("water" in actual_path[-1].material.name.lower()):
             for neigh in actual_path[-1].get_neighbors_moore():
                 if neigh and neigh.name != "river":

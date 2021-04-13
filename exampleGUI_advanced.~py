@@ -17,7 +17,7 @@ def generate_map():
     mi = MapInitializer("First demo map")
 ##    mi.chunk = (random.randint(0,1000), random.randint(0,1000))
     mi.chunk = (1310,15)
-    mi.world_size = (32,32) #size of a chunk
+    mi.chunk_size = (32,32) #size of a chunk
 ##    mi.set_terrain_type(terrain_plains, colorscale_normal)
     #dont forget to adapt terrain and colorscale to the actual map generated.
     mi.set_terrain_type(terrain_medium, colorscale_normal)
@@ -27,7 +27,7 @@ def generate_map():
 ##    mi.zoom_cell_sizes = [32, 16] #two zoom levels
     mi.zoom_cell_sizes = [32] #one zoom level
     me = mi.configure_map_editor(FPS) #me = "Map Editor"
-    img = me.get_hmap_img((mi.world_size[0]*10,mi.chunk_size[1]*10))
+    img = me.get_hmap_img((mi.chunk_size[0]*10,mi.chunk_size[1]*10))
     return me, img, mi
 
 def refresh():
@@ -86,6 +86,10 @@ m.play()
 
 app.quit()
 
+#1. revenir a version qui marche
+#2 fonctions smart pour travailler.
+##se construit a build_surfaces, et plus jamais appele, mais pas d'objet dsssus!
+# ==> flag built[t] sur cellules set a True par blit_object
 
 #utiliser numpy uniquement !
 #normaliser par une constante (qui est une fonction des octaves!?) et controler les overflow : parametriser

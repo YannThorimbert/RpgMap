@@ -39,7 +39,7 @@ def get_river_source(md):
 
 
 
-def add_river_greedy(me, lm, layer, material_dict, imgs, rounded_river,
+def add_river_greedy(me, lm, material_dict, imgs, rounded_river,
                         min_length):
     """Computes and draw a random river."""
     print("     Building random river...")
@@ -158,7 +158,7 @@ def add_river_greedy(me, lm, layer, material_dict, imgs, rounded_river,
         assert cell.name != "river"
         c = c.add_copy_on_cell(cell)
         cell.name = "river"
-        layer.static_objects.append(c)
+        lm.static_objects.append(c)
 
     if actual_path:
         print("RIVER BUILT:", [cell.coord for cell in actual_path])
@@ -172,7 +172,7 @@ def add_river_greedy(me, lm, layer, material_dict, imgs, rounded_river,
                     river_obj = MapObject(me, imgs[(0,0,None)][0], "river", 1.)
                     river_obj = river_obj.add_copy_on_cell(neigh)
                     neigh.name = "river"
-                    layer.static_objects.append(river_obj)
+                    lm.static_objects.append(river_obj)
     return objs
 
 

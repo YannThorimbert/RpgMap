@@ -422,13 +422,25 @@ class MapInitializer:
 
     def build_neigh(self, me, chunk):
         import time
-        hmap = me.build_hmap_neigh(chunk)
-        lm = build_lm_neigh(me, hmap) #5%
-        self.add_static_objects_neigh(me, lm, (chunk[0]+1,chunk[1]+1)) #25%
+        a = time.time()
+        hmap = me.build_hmap_neigh(chunk) #3%
+        b = time.time()
+        lm = build_lm_neigh(me, hmap) #22%
+        c = time.time()
+        self.add_static_objects_neigh(me, lm, (chunk[0]+1,chunk[1]+1)) #18%
+        d = time.time()
 ##        self.add_user_objects(me) #pas encore fait
-        lm.build_surfaces() #70%
+        lm.build_surfaces() #0%
+        e = time.time()
         sort_objects = True
-        lm.blit_objects(sort=sort_objects) #blit objs on graphical maps
+        lm.blit_objects(sort=sort_objects) #64% blit objs on graphical maps
+##        lm.blit_objects_smart() #64%
+        f = time.time()
+        #monitoring
+        tot_time = f-a
+        steps = [b-a,c-b,d-c,e-d,f-e]
+        for s in steps:
+            print(round(100.*s/tot_time),"% ", end="")
         return lm
 
     def init_loading_bar(self):

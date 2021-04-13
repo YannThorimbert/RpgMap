@@ -40,7 +40,7 @@ def refresh():
         button_genmap.blit()
     pygame.display.flip()
 
-W,H = 1200, 700 #screen size
+W,H = 1000, 700 #screen size
 app = thorpy.Application((W,H))
 FPS = 80
 
@@ -86,6 +86,10 @@ m.play()
 
 app.quit()
 
+#1. revenir a version qui marche
+#2 fonctions smart pour travailler.
+##se construit a build_surfaces, et plus jamais appele, mais pas d'objet dsssus!
+# ==> flag built[t] sur cellules set a True par blit_object
 
 #utiliser numpy uniquement !
 #normaliser par une constante (qui est une fonction des octaves!?) et controler les overflow : parametriser

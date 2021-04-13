@@ -117,7 +117,7 @@ class MapEditor:
             delta = xc//self.cam.nx, yc//self.cam.ny
             if not (delta in self.neigh_maps):
                 self.neigh_maps[delta] = NeighMap(self, delta)
-        print(len(self.neigh_maps))
+##        print(len(self.neigh_maps))
 
 
     def add_to_objects_dict(self, o):
@@ -336,6 +336,7 @@ class MapEditor:
 
 
     def build_surfaces(self, sort_objects=True):
+        print("***************************")
         self.lm.build_surfaces() #build surfaces attribute of graphical maps
 ##        self.lm.build_surfaces_fast()
         self.lm.blit_objects(sort=sort_objects) #blit objs on graphical maps
@@ -617,7 +618,7 @@ class MapEditor:
             center_of_map_layout = self.W//2, self.H//2
             d = V2(pos) - center_of_map_layout
             if d != (0,0):
-                intensity = d.length_squared()**1.5
+                intensity = 1e-6*d.length_squared()**1.5
                 if intensity > 1.:
                     intensity = 1.
                 d.scale_to_length(intensity)
