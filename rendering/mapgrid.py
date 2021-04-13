@@ -279,21 +279,21 @@ class LogicalMap(BaseGrid):
             gm.surfaces = gm.pure_surfaces
             gm.save_pure_surfaces()
 
-    def blit_objects(self, objects=None, sort=True): #this is permanent
-        if objects is None:
-            objects = self.static_objects
-        #
-        ground = [o for o in objects if o.is_ground]
-        not_ground = [o for o in objects if not o.is_ground]
-        if sort:
-            not_ground.sort(key=lambda x: x.ypos())
-        for obj in ground:
-            self.blit_object(obj)
-        for obj in not_ground:
-            self.blit_object(obj)
+##    def blit_objects(self, objects=None, sort=True): #this is permanent
+##        if objects is None:
+##            objects = self.static_objects
+##        #
+##        ground = [o for o in objects if o.is_ground]
+##        not_ground = [o for o in objects if not o.is_ground]
+##        if sort:
+##            not_ground.sort(key=lambda x: x.ypos())
+##        for obj in ground:
+##            self.blit_object(obj)
+##        for obj in not_ground:
+##            self.blit_object(obj)
 
-##    def blit_objects_smart(self, objects=None, sort=True): #this is permanent
-##        pass
+    def blit_objects(self, objects=None, sort=True): #this is permanent
+        pass
 
     def blit_objects_only_on_cells(self, objs, cells):
         """Blit objs only on the specified cells, cropping the rest"""
@@ -352,8 +352,9 @@ class GraphicalMap(PygameGrid):
 ##                              for x in range(self.n_submaps[0])]
 
 
-    def build_surface(self, submap_x, submap_y, frame_t): #xxx peut etre eclaté en temps et par cellule !!! ==> graphicalcell.built[t]
-        """x and y are the submap indices"""
+    def build_surface(self, submap_x, submap_y, frame_t):
+        """x and y are the submap indices.
+        This function build the submaps, not individual cells !"""
         xi = submap_x * self.submap_size_cells[0]
         yi = submap_y * self.submap_size_cells[1]
         xf = min(xi + self.submap_size_cells[0], self.nx)
@@ -362,15 +363,60 @@ class GraphicalMap(PygameGrid):
         glob_posy_pix = yi * self.cell_size
         #
         s = self.lm.me.surfaces32.pop()
+        self.surfaces[submap_x][submap_y][frame_t] = s
         for x in range(xi,xf):
             xpix = x*self.cell_size
             for y in range(yi,yf):
                 ypix = y*self.cell_size
                 img = self[(x,y)].imgs[frame_t]
                 s.blit(img, (xpix-glob_posx_pix,ypix-glob_posy_pix))
+                #
+                cell = self.lm[x,y]
+                ground = [o for o in cell.objects if o.is_ground]
+                not_ground = [o for o in cell.objects if not(o.is_ground)]
+                sort = True
+                if sort:
+                    not_ground.sort(key=lambda x: x.ypos())
+                for o in ground:
+                    self.blit_object_at_frame(o, frame_t)
+                for o in not_ground:
+                    self.blit_object_at_frame(o, frame_t)
         if self.colorkey is not None:
             s.set_colorkey(self.colorkey)
-        self.surfaces[submap_x][submap_y][frame_t] = s
+##        self.surfaces[submap_x][submap_y][frame_t] = s
+
+
+##    def build_surface_objects(self, submap_x, submap_y, frame_t):
+##        """x and y are the submap indices.
+##        This function build the submaps, not individual cells !"""
+##        xi = submap_x * self.submap_size_cells[0]
+##        yi = submap_y * self.submap_size_cells[1]
+##        xf = min(xi + self.submap_size_cells[0], self.nx)
+##        yf = min(yi + self.submap_size_cells[1], self.ny)
+##        glob_posx_pix = xi * self.cell_size
+##        glob_posy_pix = yi * self.cell_size
+##        #
+##        s = self.lm.me.surfaces32.pop()
+##        for x in range(xi,xf):
+##            xpix = x*self.cell_size
+##            for y in range(yi,yf):
+##                ypix = y*self.cell_size
+##                img = self[(x,y)].imgs[frame_t]
+##                s.blit(img, (xpix-glob_posx_pix,ypix-glob_posy_pix))
+##                #
+##                cell = self.lm[x,y]
+##                ground = [o for o in cell.objects if o.is_ground and o.is_static]
+##                not_ground = [o for o in cell.objects if not(o.is_ground) and o.is_static]
+##                sort = True
+##                if sort:
+##                    not_ground.sort(key=lambda x: x.ypos())
+##                for o in ground:
+##                    self.blit_object_at_frame(o, frame_t)
+##                for o in not_ground:
+##                    self.blit_object_at_frame(o, frame_t)
+##        if self.colorkey is not None:
+##            s.set_colorkey(self.colorkey)
+##        self.surfaces[submap_x][submap_y][frame_t] = s
 
     def blit_material_of_cell(self, cell):
         """Blit the base surface (terrain)"""
@@ -428,42 +474,38 @@ class GraphicalMap(PygameGrid):
 
     def blit_object_at_frame(self, obj, t):
         """blit images <obj_img> on self's surface"""
-        relpos = obj.relpos
+        delta = obj.relpos
+        dx, dy = int(delta[0]*self.cell_size), int(delta[1]*self.cell_size)
         xobj, yobj = obj.cell.coord
         obj_rect = obj.imgs_z_t[self.level][0].get_rect()
         obj_rect.center = (self.cell_size//2,)*2
-        dx, dy = int(relpos[0]*self.cell_size), int(relpos[1]*self.cell_size)
         obj_rect.move_ip(dx,dy)
-        #fill table of surfaces
         surfx = xobj//self.submap_size_cells[0]
         surfy = yobj//self.submap_size_cells[0]
-        xpix = xobj*self.cell_size - surfx*self.submap_size_pix[0] + obj_rect.x
+        xpix = xobj*self.cell_size - surfx*self.submap_size_pix[0] + obj_rect.x #xx simplifiable ?
         ypix = yobj*self.cell_size - surfy*self.submap_size_pix[1] + obj_rect.y
-        for dx in range(-1,2):
-            for dy in range(-1,2):
-                cx,cy = surfx+dx, surfy+dy
-                if 0 <= cx < self.n_submaps[0] and 0 <= cy < self.n_submaps[1]: #xxx else : remonter a map adjacente...
-                    x = xpix - dx*self.submap_size_pix[0]
-                    y = ypix - dy*self.submap_size_pix[1]
-                    img = obj.imgs_z_t[self.level][t%obj.nframes]
-                    s = self.surfaces[cx][cy][t]
-                    if s:
-                        s.blit(img, (x,y))
-                    else:
+##        for dx in range(-1,2):
+##            for dy in range(-1,2):
+##                cx,cy = surfx+dx, surfy+dy
+##                if 0 <= cx < self.n_submaps[0] and 0 <= cy < self.n_submaps[1]: #xxx else : remonter a map adjacente...
+##                    x = xpix - dx*self.submap_size_pix[0]
+##                    y = ypix - dy*self.submap_size_pix[1]
+##                    img = obj.imgs_z_t[self.level][t%obj.nframes]
+##                    s = self.surfaces[cx][cy][t]
+##                    if s:
+##                        s.blit(img, (x,y))
+##                    else:
 ##                        assert False
-                        self.build_surface(cx,cy,t)
-                        self.surfaces[cx][cy][t].blit(img, (x,y))
+##                        self.build_surface(cx,cy,t)
+##                        self.surfaces[cx][cy][t].blit(img, (x,y))
 
-##        cx, cy = surfx, surfy
-##        x = xpix - dx*self.submap_size_pix[0]
-##        y = ypix - dy*self.submap_size_pix[1]
-##        img = obj.imgs_z_t[self.level][t%obj.nframes]
-##        s = self.surfaces[cx][cy][t]
-##        if s:
-##            s.blit(img, (x,y))
-##        else:
-##            pass
-####            assert False
+        cx, cy = surfx, surfy
+        img = obj.imgs_z_t[self.level][t%obj.nframes]
+        s = self.surfaces[cx][cy][t]
+        if s:
+            s.blit(img, (xpix,ypix))
+        else:
+            assert False
 
 
     def blit_object_only_on_cell(self, obj, cell):
