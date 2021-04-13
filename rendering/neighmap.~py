@@ -1,0 +1,23 @@
+from RpgMap.thornoise.purepython.noisegen import colorscale_normal
+from RpgMap.rendering.camera import Camera
+
+import time
+class NeighMap:
+
+    def __init__(self, me, chunk):
+        a = time.time()
+        self.me = me
+        lm = self.me.lm
+        mi = me.map_initializer
+##        mi.chunk = chunk
+        #
+        fast, use_beach_tiler, load_tilers = False, True, False
+        b = time.time()
+        self.lm = mi.build_neigh(self.me, chunk)
+        self.map_initializer = mi
+        c = time.time()
+        self.me.add_lm_to_object_dict(self.lm)
+        d = time.time()
+        self.cam = self.me.cam.copy(self.lm)
+        e = time.time()
+        print("***", b-a, c-b, d-c, e-d)
