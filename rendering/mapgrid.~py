@@ -240,22 +240,13 @@ class LogicalMap(BaseGrid):
         return self.graphical_maps[zoom][coord]
 
 
-    def draw(self, screen, dx_pix, dy_pix):
+
+    def draw(self, screen, dx_pix, dy_pix, topleft, bottomright):
         #dx_pix : number of pixels between the beginning of the cell and
         #   the actual pos.
         x0 = self.current_x
         y0 = self.current_y
-        self.current_gm.draw(screen, x0, y0, dx_pix, dy_pix, self.t)
-##        self.current_gm.draw_blits(screen, topleft, x0, y0, dx_pix, dy_pix, self.t)
-
-
-    def draw_smart(self, screen, dx_pix, dy_pix, topleft, bottomright):
-        #dx_pix : number of pixels between the beginning of the cell and
-        #   the actual pos.
-        x0 = self.current_x
-        y0 = self.current_y
-##        print(topleft, x0,y0)
-        self.current_gm.draw_smart(screen, x0, y0, dx_pix, dy_pix, self.t, topleft, bottomright)
+        self.current_gm.draw(screen, x0, y0, dx_pix, dy_pix, self.t, topleft, bottomright)
 ##        self.current_gm.draw_blits(screen, topleft, x0, y0, dx_pix, dy_pix, self.t)
 
     def build_surfaces(self):
@@ -345,29 +336,8 @@ class GraphicalMap(PygameGrid):
         self.submap_size_cells = (self.submap_size_pix[0]//self.cell_size,
                                     self.submap_size_pix[1]//self.cell_size)
 
+
     def build_surfaces(self, colorkey):
-        import time
-        a = time.time()
-        #create table of surfaces
-        #using pre-initialized surfaces saves about half a second of execution time!
-        self.surfaces = [[[self.lm.me.surfaces32.pop() for frame in range(self.nframes)]
-                            for y in range(self.n_submaps[1])]
-                              for x in range(self.n_submaps[0])]
-##        self.surfaces = [[[pygame.Surface(self.submap_size_pix) for frame in range(self.nframes)]
-##                        for y in range(self.n_submaps[1])]
-##                          for x in range(self.n_submaps[0])]
-
-        b = time.time()
-        #fill table of surfaces
-        #opti : lot of things are constant in the loop below! xx
-        self.colorkey = colorkey
-        for x,y in self: #unit : cell
-            self.build_surface(x,y)
-        c = time.time()
-        print("***",b-a,c-b)
-
-
-    def build_surfaces_smart(self, colorkey):
         #create table of surfaces
         self.colorkey = colorkey
         self.surfaces = [[[None for frame in range(self.nframes)]
@@ -377,21 +347,8 @@ class GraphicalMap(PygameGrid):
 ##                            for y in range(self.n_submaps[1])]
 ##                              for x in range(self.n_submaps[0])]
 
-    def build_surface(self, x, y): #xxx peut etre eclaté en temps
-        """x and y are in coords units from the whole graphical map"""
-        #opti : lot of things are constant in the code below! xx
-        surfx = x//self.submap_size_cells[0]
-        surfy = y//self.submap_size_cells[1]
-        xpix = x*self.cell_size - surfx*self.submap_size_pix[0]
-        ypix = y*self.cell_size - surfy*self.submap_size_pix[1]
-        for t in range(self.nframes):
-            img = self[(x,y)].imgs[t] #see refresh_cell_types
-            self.surfaces[surfx][surfy][t].blit(img, (xpix,ypix))
-            if self.colorkey is not None:
-                self.surfaces[surfx][surfy][t].set_colorkey(self.colorkey)
 
-
-    def build_surface_smart(self, submap_x, submap_y): #xxx peut etre eclaté en temps et par cellule !!! ==> graphicalcell.built[t]
+    def build_surface(self, submap_x, submap_y): #xxx peut etre eclaté en temps et par cellule !!! ==> graphicalcell.built[t]
         """x and y are the submap indices"""
         xi = submap_x * self.submap_size_cells[0]
         yi = submap_y * self.submap_size_cells[1]
@@ -404,7 +361,7 @@ class GraphicalMap(PygameGrid):
         print("HOHO",submap_x, xi, xf)
         for t in range(self.nframes):
             s = self.lm.me.surfaces32.pop()
-            print("la surface",s)
+##            print("la surface",s)
             for x in range(xi,xf):
                 xpix = x*self.cell_size
                 for y in range(yi,yf):
@@ -558,19 +515,8 @@ class GraphicalMap(PygameGrid):
 ##    Les autres cellules, donc, se redessinnent, mais on ne blitte que ca !
 
 
-    def draw(self, screen, x0, y0, dxpix, dypix, t):
-        #x0 = current_x from lm
-        delta_x = dxpix + x0*self.cell_size
-        delta_y = dypix + y0*self.cell_size
-        for x in range(self.n_submaps[0]):
-            posx = round(x*self.submap_size_pix[0] - delta_x)
-            for y in range(self.n_submaps[1]):
-                posy = round(y*self.submap_size_pix[1] - delta_y)
-                screen.blit(self.surfaces[x][y][t], (posx,posy))
-                #draw submap border:
-                pygame.draw.rect(screen, (0,0,255), pygame.Rect(posx,posy,self.submap_size_pix[0],self.submap_size_pix[1]),1)
 
-    def draw_smart(self, screen, x0, y0, dxpix, dypix, t, topleft, bottomright):
+    def draw(self, screen, x0, y0, dxpix, dypix, t, topleft, bottomright):
         #x0 = current_x from lm
         delta_x = dxpix + x0*self.cell_size
         delta_y = dypix + y0*self.cell_size

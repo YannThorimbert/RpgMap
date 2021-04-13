@@ -37,7 +37,6 @@ class MapEditor:
         #values below are default values; they can change and
         # self.refresh_derived_parameters() must be called
         self.fps = 80
-        self.box_hmap_margin = 20 #box of the minimap
         self.menu_width = 200
         self.zoom_cell_sizes = None
         self.chunk_size = None

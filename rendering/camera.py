@@ -56,25 +56,14 @@ class Camera:
         dy = self.pos_cells.y-y
         return dx*self.cell_size, dy*self.cell_size
 
-    def draw_map(self, screen, show_grid_lines):
-        r = self.get_visible_map_rect()
-        xpix, ypix = self.get_dpix()
-        self.lm.draw(self.surface, xpix, ypix)
-        if show_grid_lines:
-            self.draw_grid_lines(self.surface)
-        screen.blit(self.surface, r.topleft, r)
 
-    def draw_map_smart(self, screen, show_grid_lines):
+    def draw_map(self, screen, show_grid_lines):
         r = self.get_visible_map_rect()
 ##        r.inflate((-200,-200)) #pk ok ?
         xpix, ypix = self.get_dpix()
-        #
         topleft = self.get_coord_at_pix(r.topleft)
         bottomright = self.get_coord_at_pix(r.bottomright)
-##        print("***",topleft, bottomright)
-        #
-##        self.lm.draw(self.surface, xpix, ypix)
-        self.lm.draw_smart(self.surface, xpix, ypix, topleft, bottomright)
+        self.lm.draw(self.surface, xpix, ypix, topleft, bottomright)
         if show_grid_lines:
             self.draw_grid_lines(self.surface)
         screen.blit(self.surface, r.topleft, r)

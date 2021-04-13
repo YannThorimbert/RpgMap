@@ -453,7 +453,7 @@ class MapEditor:
 
 
     def draw_as_neigh(self, neigh_map):
-        neigh_map.cam.draw_map_smart(self.screen, self.show_grid_lines)
+        neigh_map.cam.draw_map(self.screen, self.show_grid_lines)
         #blit cursor
 ##        self.cam.draw_rmouse(self.screen, self.box_hmap.get_rect())
         #blit objects
