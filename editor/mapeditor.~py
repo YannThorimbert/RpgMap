@@ -39,8 +39,8 @@ class MapEditor:
         self.fps = 80
         self.box_hmap_margin = 20 #box of the minimap
         self.menu_width = 200
-        self.zoom_cell_sizes = [20,16,10]
-        self.chunk_size = (128,128)
+        self.zoom_cell_sizes = None
+        self.chunk_size = None
         self.chunk = None
         self.nframes = 16 #number of different tiles for one material (used for moving water)
         self.max_wanted_minimap_size = 128 #in pixels.
@@ -68,8 +68,6 @@ class MapEditor:
         self.cell_info = None
         self.unit_info = None
 ##        self.misc_info = None
-        self.e_hmap = None
-        self.box_hmap = None
         #
         self.ap = gui.AlertPool()
         self.alert_elements = []
@@ -188,19 +186,6 @@ class MapEditor:
         thorpy.store(self.e_box)
 
     def build_gui_elements(self): #worst function ever
-        e_hmap = thorpy.Image.make(self.original_img_hmap) #a refaire !!!xxx
-        e_hmap.stick_to("screen", "right", "right", False)
-        self.e_hmap = e_hmap
-        box_hmap = thorpy.Box.make([e_hmap])
-        box_hmap.fit_children((self.box_hmap_margin,)*2)
-        thorpy.makeup.add_basic_help(box_hmap,
-                                     "Click to move camera on miniature map")
-##        e_title_hmap = guip.get_text("Map")
-##        self.topbox = thorpy.make_group([e_title_hmap, box_hmap], "v")
-        self.topbox = box_hmap
-        self.box_hmap = box_hmap
-        ########################################################################
-##        self.cam.set_gui_elements(e_hmap, box_hmap)
         ########################################################################
         if len(self.zoom_cell_sizes) > 1:
             self.e_zoom = thorpy.SliderX.make(self.menu_width//4, (0, 100),
@@ -210,15 +195,14 @@ class MapEditor:
                 level = int(levels*self.e_zoom.get_value()/self.e_zoom.limvals[1])
                 self.set_zoom(levels-level,False)
         ########################################################################
-        self.cell_info = gui.CellInfo(self, self.menu_rect.inflate((-10,0)).size,
-                         self.cell_rect.size, self.draw_no_update, e_hmap)
-        self.unit_info = gui.UnitInfo(self,self.menu_rect.inflate((-10,0)).size,
-                         self.cell_rect.size, self.draw_no_update, e_hmap)
-##        self.misc_info = gui.MiscInfo(self.menu_rect.inflate((-10,0)).size)
         self.menu_button = thorpy.make_menu_button(force_convert_alpha=True)
+        self.cell_info = gui.CellInfo(self, self.menu_rect.inflate((-10,0)).size,
+                         self.cell_rect.size, self.draw_no_update, self.menu_button)
+        self.unit_info = gui.UnitInfo(self,self.menu_rect.inflate((-10,0)).size,
+                         self.cell_rect.size, self.draw_no_update, self.menu_button)
+##        self.misc_info = gui.MiscInfo(self.menu_rect.inflate((-10,0)).size)
         ########################################################################
-        elements =[ self.topbox,
-                    self.cell_info.e,
+        elements =[ self.cell_info.e,
                     self.unit_info.e,
                     self.menu_button]
         if len(self.zoom_cell_sizes) > 1:
@@ -554,13 +538,14 @@ class MapEditor:
 
 
     def func_reac_click(self, e):
-        if e.button == 1: #left click
-            if self.box_hmap.get_rect().collidepoint(e.pos):
-                self.cam.center_on(e.pos)
-##            elif pygame.key.get_mods() & pygame.KMOD_LCTRL:
-##                self.increment_zoom(1)
-        elif e.button == 3: #right click
-            pass
+        pass
+##        if e.button == 1: #left click
+##            if self.box_hmap.get_rect().collidepoint(e.pos):
+##                self.cam.center_on(e.pos)
+####            elif pygame.key.get_mods() & pygame.KMOD_LCTRL:
+####                self.increment_zoom(1)
+##        elif e.button == 3: #right click
+##            pass
 
 
     def func_reac_unclick(self, e):
@@ -671,13 +656,9 @@ class MapEditor:
     def refresh_derived_parameters(self):
         self.cell_size = self.zoom_cell_sizes[self.zoom_level]
         self.cell_rect = pygame.Rect(0,0,self.cell_size,self.cell_size)
-        self.max_minimap_size = (self.max_wanted_minimap_size,)*2
         self.menu_size = (self.menu_width, self.H)
         self.menu_rect = pygame.Rect((0,0),self.menu_size)
         self.menu_rect.right = self.W
-        if self.menu_rect.w < self.max_minimap_size[0] + self.box_hmap_margin*2:
-            s = self.menu_rect.w - self.box_hmap_margin*2 - 2 #bug
-            self.max_minimap_size = (s,s)
 ##        self.viewport_rect = pygame.Rect((0,0),(self.menu_rect.left,
 ##                                                self.menu_rect.bottom))
 

@@ -77,6 +77,7 @@ class MiscInfo:
         self.e.set_size((size[0],None))
 
 class CellInfo:
+    BKG_COLOR = (190,)*3
     def __init__(self, me, size, cell_size, redraw, external_e):
         self.me = me
         self.wline = int(0.75*size[0])
@@ -90,7 +91,7 @@ class CellInfo:
 ##        self.e_mat.fit_children(axis=(False, True))
         self.elements = [self.e_mat, self.e_coordalt]
         self.e = thorpy.Box.make(self.elements)
-        self.e.set_main_color((20,20,20))
+        self.e.set_main_color(self.BKG_COLOR)
         self.e.set_size((size[0],int(0.8*self.e.get_fus_size()[1])), margins=(2,2))
         for e in self.e.get_elements():
             e.recenter()
@@ -270,6 +271,7 @@ class CellInfo:
 
 
 class UnitInfo: #name, image, nombre(=vie dans FS!)
+    BKG_COLOR = (190,)*3
     def __init__(self, me, size, cell_size, redraw, external_e):
         self.me = me
         self.wline = int(0.75*size[0])
@@ -291,7 +293,7 @@ class UnitInfo: #name, image, nombre(=vie dans FS!)
         #
         self.elements = [self.e_group]
         self.e = thorpy.Box.make(self.elements)
-        self.e.set_main_color((20,20,20))
+        self.e.set_main_color(self.BKG_COLOR)
         self.e.set_size((size[0],None))
         for e in self.e.get_elements():
             e.recenter()

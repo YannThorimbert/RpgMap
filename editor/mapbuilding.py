@@ -74,8 +74,6 @@ class MapInitializer:
         self.nframes = 16 #number of frames per world cycle (impacts memory requirement!)
         self.fps = None #frame per second
         self.menu_width = 200 #width of the right menu in pixels
-        self.box_hmap_margin = 20 #padding of the minimap inside its box
-        self.max_wanted_minimap_size = 64 #size of the MINIMAP in pixels
         ############ material options:
         #cell_radius = cell_size//radius_divider
         # change how "round" look cell transitions
@@ -167,13 +165,10 @@ class MapInitializer:
         self.fps = fps
         me = MapEditor(self.name)
         me.map_initializer = self
-        me.box_hmap_margin = self.box_hmap_margin
         me.zoom_cell_sizes = self.zoom_cell_sizes
         me.nframes = self.nframes
         me.fps = self.fps
-        me.box_hmap_margin = self.box_hmap_margin
         me.menu_width = self.menu_width
-        me.max_wanted_minimap_size = self.max_wanted_minimap_size
         me.chunk_size = self.chunk_size
         me.chunk = self.chunk
 ##        me.current_chunk = self.chunk
