@@ -127,7 +127,7 @@ class Game:
         n_submaps_per_map = 36
         n_time_frames = 16
         n_maps_on_screen = 9
-        some_random_factor = 1.
+        some_random_factor = 2.
         N = int(n_submaps_per_map*n_time_frames*n_maps_on_screen*some_random_factor)
         print("***INITIAL", N)
         map_initializer.init_loading_bar()

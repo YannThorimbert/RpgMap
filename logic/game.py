@@ -35,26 +35,6 @@ class Game:
         self.bridge = None
         self.is_main = True
 
-##    def build_neighbour_map(self, chunk_neigh):
-##        lm = self.me.lm
-##        from RpgMap.editor.mapbuilding import MapInitializer, terrain_medium
-##        from RpgMap.thornoise.purepython.noisegen import colorscale_normal
-##        mi = MapInitializer("Neighbour map")
-##        mi.chunk = chunk_neigh
-##        mi.world_size = (lm.nx, lm.ny)
-##        #
-##        mi.set_terrain_type(terrain_medium, colorscale_normal)
-##        mi.max_number_of_roads = 0
-##        mi.max_number_of_rivers = 0
-##        mi.zoom_cell_sizes = self.me.zoom_cell_sizes
-##        me_neigh = mi.configure_map_editor(self.me.fps) #on peut partager bcp. Faire une methode GET_NEIGH dans map editor
-##        #
-##        game_neigh = Game(me_neigh)
-##        game_neigh.is_main = False
-##        game_neigh.build_map(mi, fast=False, use_beach_tiler=True, load_tilers=False)
-##        print("***",me_neigh)
-####        self.me.me_neigh = me_neigh
-##        return me_neigh
 
     def set_main_map(self, other):
         print("*** set main map")

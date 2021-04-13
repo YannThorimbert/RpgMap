@@ -24,7 +24,7 @@ def sgn(x):
 
 class MapEditor:
 ##    saved_attrs = ["zoom_cell_sizes", "nframes", "fps", "menu_width",
-##                            "max_wanted_minimap_size", "world_size", "chunk",
+##                            "max_wanted_minimap_size", "chunk_size", "chunk",
 ##                            "persistance", "n_octaves","show_grid_lines",
 ##                            "box_hmap_margin"]
 
@@ -39,8 +39,8 @@ class MapEditor:
         self.fps = 80
         self.box_hmap_margin = 20 #box of the minimap
         self.menu_width = 200
-        self.zoom_cell_sizes = [20,16,10]
-        self.world_size = (128,128)
+        self.zoom_cell_sizes = None
+        self.chunk_size = None
         self.chunk = None
         self.nframes = 16 #number of different tiles for one material (used for moving water)
         self.max_wanted_minimap_size = 128 #in pixels.
@@ -107,7 +107,9 @@ class MapEditor:
             for x in range(nx):
                 for y in range(ny):
                     for t in range(nt):
-                        self.surfaces32.append(surfaces[x][y][t])
+                        s = surfaces[x][y][t]
+                        if s:
+                            self.surfaces32.append(s)
         #Add nearest maps
         corners = []
         for x in [r.x, r.w]:
@@ -314,13 +316,13 @@ class MapEditor:
     def build_map(self):
         outsides = self.materials["outside"].imgs
         self.lm = LogicalMap(self.hmap, self.material_couples,
-                             outsides, self.world_size)
+                             outsides, self.chunk_size)
         self.lm.me = self
         return self.lm
 
     def build_neigh(self, hmap):
         outsides = self.materials["outside"].imgs
-        lm = LogicalMap(hmap, self.material_couples, outsides, self.world_size)
+        lm = LogicalMap(hmap, self.material_couples, outsides, self.chunk_size)
         lm.me = self
         return lm
 
@@ -336,10 +338,10 @@ class MapEditor:
         for level in range(len(self.zoom_cell_sizes)):
             self.zoom_level = level
             self.refresh_derived_parameters()
-            cam.set_parameters(self.world_size, self.cell_size)
+            cam.set_parameters(self.chunk_size, self.cell_size)
         self.zoom_level = 0
         self.refresh_derived_parameters()
-        cam.set_parameters(self.world_size, self.cell_size)
+        cam.set_parameters(self.chunk_size, self.cell_size)
         self.cam = cam
 
     def set_key_scroll_velocity(self, velnorm):
@@ -407,7 +409,7 @@ class MapEditor:
         center_before = self.cam.nx//2, self.cam.ny//2
         self.zoom_level = level
         self.refresh_derived_parameters()
-        self.cam.set_parameters(self.world_size,
+        self.cam.set_parameters(self.chunk_size,
                             self.cell_size)
         self.lm.set_zoom(level)
         self.cam.reinit_pos()
@@ -432,7 +434,7 @@ class MapEditor:
         self.draw_no_update()
         #
         for nm in self.neigh_maps.values():
-            nm.cam.set_parameters(self.world_size, self.cell_size)
+            nm.cam.set_parameters(self.chunk_size, self.cell_size)
             nm.lm.set_zoom(level)
 
 
@@ -710,7 +712,7 @@ class MapEditor:
     def build_hmap(self):
         if self.n_octaves == "auto" or self.n_octaves == "max":
             self.n_octaves = None
-        M = max(self.world_size)
+        M = max(self.chunk_size)
         power = int(math.log2(M))
         if 2**power < M:
             power += 1
@@ -718,8 +720,8 @@ class MapEditor:
         hmap = ng.generate_terrain(S, self.n_octaves, self.chunk, self.persistance)
         hmax = 3.5
         hmin = 0.5
-        for x in range(self.world_size[0]):
-            for y in range(self.world_size[1]):
+        for x in range(self.chunk_size[0]):
+            for y in range(self.chunk_size[1]):
                 h = hmap[x][y] - hmin
                 h /= (hmax-hmin)
                 hmap[x][y] = h
@@ -735,7 +737,7 @@ class MapEditor:
     def build_hmap_neigh(self, chunk):
         if self.n_octaves == "auto" or self.n_octaves == "max":
             self.n_octaves = None
-        M = max(self.world_size)
+        M = max(self.chunk_size)
         power = int(math.log2(M))
         if 2**power < M:
             power += 1
@@ -743,8 +745,8 @@ class MapEditor:
         hmap = ng.generate_terrain(S, self.n_octaves, chunk, self.persistance)
         hmax = 3.5
         hmin = 0.5
-        for x in range(self.world_size[0]):
-            for y in range(self.world_size[1]):
+        for x in range(self.chunk_size[0]):
+            for y in range(self.chunk_size[1]):
                 h = hmap[x][y] - hmin
                 h /= (hmax-hmin)
                 hmap[x][y] = h
@@ -788,10 +790,10 @@ class MapEditor:
 ##        if not self.hmap:
         hmap = self.build_hmap()
         img_hmap = ng.build_surface(self.hmap, self.colorscale_hmap)
-        new_img_hmap = pygame.Surface(self.world_size)
+        new_img_hmap = pygame.Surface(self.chunk_size)
         new_img_hmap.blit(img_hmap, (0,0))
-##        w = int(0.2*self.world_size[0]*self.cell_size)
-##        h = int(0.2*self.world_size[1]*self.cell_size)
+##        w = int(0.2*self.chunk_size[0]*self.cell_size)
+##        h = int(0.2*self.chunk_size[1]*self.cell_size)
         w,h = size
         img = pygame.transform.scale(new_img_hmap, (w,h))
         return img

@@ -255,7 +255,7 @@ class LogicalMap(BaseGrid):
         x0 = self.current_x
         y0 = self.current_y
 ##        print(topleft, x0,y0)
-        self.current_gm.draw_smart(screen, x0, y0, dx_pix, dy_pix, self.t)
+        self.current_gm.draw_smart(screen, x0, y0, dx_pix, dy_pix, self.t, topleft, bottomright)
 ##        self.current_gm.draw_blits(screen, topleft, x0, y0, dx_pix, dy_pix, self.t)
 
     def build_surfaces(self):
@@ -263,8 +263,8 @@ class LogicalMap(BaseGrid):
             print("     Logical map building graphical map for size ",
                     gm.cell_size)
             gm.generate_submaps_parameters(factor=const.SUBMAP_FACTOR)
-##            gm.build_surfaces_smart(self.colorkey)
-            gm.build_surfaces(self.colorkey)
+            gm.build_surfaces_smart(self.colorkey)
+##            gm.build_surfaces(self.colorkey)
 
     def blit_material_of_cell(self, cell):
         for gm in self.graphical_maps:
@@ -330,85 +330,90 @@ class GraphicalMap(PygameGrid):
         self.pure_surfaces = None #surfaces with no objects
         self.nframes = len(self.outside_imgs)
         #
-        self.submap_size = None
+        self.submap_size_pix = None
+        self.submap_size_cells = None
         self.n_submaps = None
         self.screen_rect = thorpy.get_screen().get_rect()
         self.colorkey = None
         self.lm = None
 
     def generate_submaps_parameters(self, factor):
-        nsubmap_x = factor//self.cell_size
-        self.submap_size = (nsubmap_x*self.cell_size, )*2
-        self.n_submaps = (math.ceil(self.frame.w/self.submap_size[0]),
-                          math.ceil(self.frame.h/self.submap_size[1]))
+        cells_per_submap_x = factor//self.cell_size
+        self.submap_size_pix = (cells_per_submap_x*self.cell_size, )*2
+        self.n_submaps = (math.ceil(self.frame.w/self.submap_size_pix[0]),
+                          math.ceil(self.frame.h/self.submap_size_pix[1]))
+        self.submap_size_cells = (self.submap_size_pix[0]//self.cell_size,
+                                    self.submap_size_pix[1]//self.cell_size)
 
     def build_surfaces(self, colorkey):
         import time
         a = time.time()
         #create table of surfaces
-##        self.surfaces = [[[self.lm.me.surfaces32.pop() for frame in range(self.nframes)]
-##                            for y in range(self.n_submaps[1])]
-##                              for x in range(self.n_submaps[0])]
-        self.surfaces = [[[pygame.Surface(self.submap_size) for frame in range(self.nframes)]
-                        for y in range(self.n_submaps[1])]
-                          for x in range(self.n_submaps[0])]
+        #using pre-initialized surfaces saves about half a second of execution time!
+        self.surfaces = [[[self.lm.me.surfaces32.pop() for frame in range(self.nframes)]
+                            for y in range(self.n_submaps[1])]
+                              for x in range(self.n_submaps[0])]
+##        self.surfaces = [[[pygame.Surface(self.submap_size_pix) for frame in range(self.nframes)]
+##                        for y in range(self.n_submaps[1])]
+##                          for x in range(self.n_submaps[0])]
 
         b = time.time()
         #fill table of surfaces
         #opti : lot of things are constant in the loop below! xx
+        self.colorkey = colorkey
         for x,y in self: #unit : cell
-            self.build_surface(x,y,colorkey)
+            self.build_surface(x,y)
         c = time.time()
         print("***",b-a,c-b)
 
 
     def build_surfaces_smart(self, colorkey):
         #create table of surfaces
-##        pygame.Surface(self.submap_size)
         self.colorkey = colorkey
-        surfaces = [[[None for frame in range(self.nframes)]
-                        for y in range(self.n_submaps[1])]
-                          for x in range(self.n_submaps[0])]
-        self.surfaces = surfaces
+        self.surfaces = [[[None for frame in range(self.nframes)]
+                            for y in range(self.n_submaps[1])]
+                              for x in range(self.n_submaps[0])]
+##        self.surfaces = [[[self.lm.me.surfaces32.pop() for frame in range(self.nframes)]
+##                            for y in range(self.n_submaps[1])]
+##                              for x in range(self.n_submaps[0])]
 
-    def build_surface(self, x, y, colorkey): #xxx peut etre eclaté en temps
+    def build_surface(self, x, y): #xxx peut etre eclaté en temps
         """x and y are in coords units from the whole graphical map"""
         #opti : lot of things are constant in the code below! xx
-        surfx = x*self.cell_size//self.submap_size[0] #unit of submap_size : pixels
-        surfy = y*self.cell_size//self.submap_size[1]
-        xpix = x*self.cell_size - surfx*self.submap_size[0]
-        ypix = y*self.cell_size - surfy*self.submap_size[1]
+        surfx = x//self.submap_size_cells[0]
+        surfy = y//self.submap_size_cells[1]
+        xpix = x*self.cell_size - surfx*self.submap_size_pix[0]
+        ypix = y*self.cell_size - surfy*self.submap_size_pix[1]
         for t in range(self.nframes):
             img = self[(x,y)].imgs[t] #see refresh_cell_types
             self.surfaces[surfx][surfy][t].blit(img, (xpix,ypix))
-            if colorkey is not None:
-                self.surfaces[surfx][surfy][t].set_colorkey(colorkey)
+            if self.colorkey is not None:
+                self.surfaces[surfx][surfy][t].set_colorkey(self.colorkey)
 
-    def build_surface_smart(self, submap_x, submap_y, colorkey): #xxx peut etre eclaté en temps
+
+    def build_surface_smart(self, submap_x, submap_y): #xxx peut etre eclaté en temps et par cellule !!! ==> graphicalcell.built[t]
         """x and y are the submap indices"""
-
-        #opti : lot of things are constant in the code below! xx
-##        submap_x = x*self.cell_size//self.submap_size[0] #unit of submap_size : pixels
-
-        cells_per_submap_x = self.submap_size[0] // self.cell_size
-        x0 = submap_x * cells_per_submap_x #total x cell of the whole graphical map
-        xpix = x0*self.cell_size - submap_x*self.submap_size[0]
-
-        cells_per_submap_y = self.submap_size[1] // self.cell_size
-        y0 = submap_y * cells_per_submap_y #total x cell of the whole graphical map
-        ypix = y0*self.cell_size - submap_y*self.submap_size[1]
-
-        for x in range(self.submap_size[0]):
-            for y in range(self.submap_size[1]):
-                for t in range(self.nframes):
-                    img = self[(x0+x,y0+y)].imgs[t] #xx d'ou vient ce truc ???
-                    s = self.surfaces[submap_x][submap_y][t]
-                    if not s:
-                        s = pygame.Surface(self.submap_size)
-                    s.blit(img, (xpix+x*self.cell_size,ypix+y*self.cell_size))
-                    if colorkey is not None:
-                        s.set_colorkey(colorkey)
-                    self.surfaces[submap_x][submap_y][t] = s
+        xi = submap_x * self.submap_size_cells[0]
+        yi = submap_y * self.submap_size_cells[1]
+        xf = min(xi + self.submap_size_cells[0], self.nx)
+        yf = min(yi + self.submap_size_cells[1], self.ny)
+##        glob_posx_pix = submap_x * self.submap_size_pix[0]
+##        glob_posy_pix = submap_y * self.submap_size_pix[1]
+        glob_posx_pix = xi * self.cell_size
+        glob_posy_pix = yi * self.cell_size
+        print("HOHO",submap_x, xi, xf)
+        for t in range(self.nframes):
+            s = self.lm.me.surfaces32.pop()
+            print("la surface",s)
+            for x in range(xi,xf):
+                xpix = x*self.cell_size
+                for y in range(yi,yf):
+                    ypix = y*self.cell_size
+                    img = self[(x,y)].imgs[t]
+                    s.blit(img, (xpix-glob_posx_pix,ypix-glob_posy_pix))
+            if self.colorkey is not None:
+                s.set_colorkey(self.colorkey)
+            self.surfaces[submap_x][submap_y][t] = s
 
     def blit_material_of_cell(self, cell):
         """Blit the base surface (terrain)"""
@@ -417,10 +422,10 @@ class GraphicalMap(PygameGrid):
 ##        cell_object.inflate_ip((self.cell_size//3,)*2)
 ##        cell_here = self.get_cell_rect_at_coord_in_submap((x, y))
 ##        area_to_be_blitted = cell_here.clip(cell_object)
-        surfx = x*self.cell_size//self.submap_size[0]
-        surfy = y*self.cell_size//self.submap_size[1]
-        xpix = x*self.cell_size - surfx*self.submap_size[0]
-        ypix = y*self.cell_size - surfy*self.submap_size[1]
+        surfx = x // self.submap_size_cells[0]
+        surfy = y // self.submap_size_cells[1]
+        xpix = x*self.cell_size - surfx*self.submap_size_pix[0]
+        ypix = y*self.cell_size - surfy*self.submap_size_pix[1]
         for t in range(self.nframes):
             img = self[(x,y)].imgs[t]
             self.surfaces[surfx][surfy][t].blit(img, (xpix,ypix))
@@ -443,7 +448,7 @@ class GraphicalMap(PygameGrid):
                     resized = pygame.transform.scale(resized, scaled_size)
                     surfaces[x][y][frame] = resized
         self.surfaces = surfaces
-        self.submap_size = scaled_size
+        self.submap_size_pix = scaled_size
         self.n_submaps = gm.n_submaps
         self.nframes = gm.nframes
 
@@ -467,21 +472,24 @@ class GraphicalMap(PygameGrid):
         dx, dy = int(relpos[0]*self.cell_size), int(relpos[1]*self.cell_size)
         obj_rect.move_ip(dx,dy)
         #fill table of surfaces
-        surfx = xobj*self.cell_size//self.submap_size[0]
-        surfy = yobj*self.cell_size//self.submap_size[1]
-        xpix = xobj*self.cell_size - surfx*self.submap_size[0] + obj_rect.x
-        ypix = yobj*self.cell_size - surfy*self.submap_size[1] + obj_rect.y
+        surfx = xobj//self.submap_size_cells[0]
+        surfy = yobj//self.submap_size_cells[0]
+        xpix = xobj*self.cell_size - surfx*self.submap_size_pix[0] + obj_rect.x
+        ypix = yobj*self.cell_size - surfy*self.submap_size_pix[1] + obj_rect.y
         for dx in range(-1,2):
             for dy in range(-1,2):
                 cx,cy = surfx+dx, surfy+dy
                 if 0 <= cx < self.n_submaps[0] and 0 <= cy < self.n_submaps[1]:
-                    x = xpix - dx*self.submap_size[0]
-                    y = ypix - dy*self.submap_size[1]
+                    x = xpix - dx*self.submap_size_pix[0]
+                    y = ypix - dy*self.submap_size_pix[1]
                     for t in range(self.nframes):
                         img = obj.imgs_z_t[self.level][t%obj.nframes]
                         s = self.surfaces[cx][cy][t]
                         if s:
                             s.blit(img, (x,y))
+                        else:
+                            self.build_surface_smart(cx,cy)
+                            self.surfaces[cx][cy][t].blit(img, (x,y))
 
 
     def blit_object_only_on_cell(self, obj, cell):
@@ -499,10 +507,10 @@ class GraphicalMap(PygameGrid):
         #xpix [pix] : location of xobj in the sub surface (local map)
         xpix_tot = xobj*self.cell_size
         ypix_tot = yobj*self.cell_size
-        surfx = xpix_tot//self.submap_size[0]
-        surfy = ypix_tot//self.submap_size[1]
-        xpix_sub = xpix_tot - surfx*self.submap_size[0] + obj_rect.x
-        ypix_sub = ypix_tot - surfy*self.submap_size[1] + obj_rect.y
+        surfx = xpix_tot//self.submap_size_pix[0]
+        surfy = ypix_tot//self.submap_size_pix[1]
+        xpix_sub = xpix_tot - surfx*self.submap_size_pix[0] + obj_rect.x
+        ypix_sub = ypix_tot - surfy*self.submap_size_pix[1] + obj_rect.y
         # ######################################################################
 ##        cell_rect = self.get_cell_rect_at_coord_in_submap(cell.coord)
 ##        print("*** ", cell_rect, obj_rect)
@@ -520,8 +528,8 @@ class GraphicalMap(PygameGrid):
                 #control that the subsurface exists:
                 if 0 <= cx < self.n_submaps[0] and 0 <= cy < self.n_submaps[1]:
                     #x [pix]is the location of the obj image in the subsurface of coord cx,cy
-                    x = xpix_sub - dx*self.submap_size[0]
-                    y = ypix_sub - dy*self.submap_size[1]
+                    x = xpix_sub - dx*self.submap_size_pix[0]
+                    y = ypix_sub - dy*self.submap_size_pix[1]
                     for t in range(self.nframes):
                         img_obj = obj.imgs_z_t[self.level][t%obj.nframes]
                         #ACCORDING TO ME, WE SHOULD CROP... But it seems to work anyway...
@@ -555,31 +563,40 @@ class GraphicalMap(PygameGrid):
         delta_x = dxpix + x0*self.cell_size
         delta_y = dypix + y0*self.cell_size
         for x in range(self.n_submaps[0]):
-            posx = round(x*self.submap_size[0] - delta_x)
+            posx = round(x*self.submap_size_pix[0] - delta_x)
             for y in range(self.n_submaps[1]):
-                posy = round(y*self.submap_size[1] - delta_y)
+                posy = round(y*self.submap_size_pix[1] - delta_y)
                 screen.blit(self.surfaces[x][y][t], (posx,posy))
                 #draw submap border:
-                pygame.draw.rect(screen, (0,0,255), pygame.Rect(posx,posy,self.submap_size[0],self.submap_size[1]),1)
+                pygame.draw.rect(screen, (0,0,255), pygame.Rect(posx,posy,self.submap_size_pix[0],self.submap_size_pix[1]),1)
 
-    def draw_smart(self, screen, x0, y0, dxpix, dypix, t):
+    def draw_smart(self, screen, x0, y0, dxpix, dypix, t, topleft, bottomright):
         #x0 = current_x from lm
         delta_x = dxpix + x0*self.cell_size
         delta_y = dypix + y0*self.cell_size
+        xi, yi = topleft
+        xf, yf = bottomright
+        print(topleft, bottomright)
         for x in range(self.n_submaps[0]):
-            posx = round(x*self.submap_size[0] - delta_x)
-            for y in range(self.n_submaps[1]):
-                posy = round(y*self.submap_size[1] - delta_y)
-                point = (posx, posy)
-                surf = self.surfaces[x][y][t]
-                if surf:
-                    screen.blit(surf, point)
-                else:
-                    print("build surf", x, y)
-                    self.build_surface_smart(x,y,self.colorkey)
-                    screen.blit(self.surfaces[x][y][t], point)
-                #draw submap border:
-                pygame.draw.rect(screen, (0,0,255), pygame.Rect(posx,posy,self.submap_size[0],self.submap_size[1]),1)
+            x_loc_i = x * self.submap_size_cells[0]
+            x_loc_f = x_loc_i + self.submap_size_cells[0]
+            if xi <= x_loc_i <= xf or xi <= x_loc_f <= xf:
+                posx = round(x*self.submap_size_pix[0] - delta_x)
+                for y in range(self.n_submaps[1]):
+                    y_loc_i = y * self.submap_size_cells[1]
+                    y_loc_f = y_loc_i + self.submap_size_cells[1]
+                    if yi <= y_loc_i <= yf or yi <= y_loc_f <= yf:
+                        posy = round(y*self.submap_size_pix[1] - delta_y)
+                        point = (posx, posy)
+                        surf = self.surfaces[x][y][t]
+                        if surf:
+                            screen.blit(surf, point)
+                        else:
+                            print("build surf", x, y)
+                            self.build_surface_smart(x,y)
+                            screen.blit(self.surfaces[x][y][t], point)
+                        #draw submap border:
+                        pygame.draw.rect(screen, (0,0,255), pygame.Rect(posx,posy,self.submap_size_pix[0],self.submap_size_pix[1]),1)
 
 ##    def draw_blits(self, screen, topleft, x0, y0, xpix, ypix, t):
 ##        delta_x = topleft[0] - xpix - x0*self.cell_size
@@ -587,16 +604,16 @@ class GraphicalMap(PygameGrid):
 ##        oldposx = delta_x
 ##        blits = []
 ##        for x in range(self.n_submaps[0]):
-##            posx = round(x*self.submap_size[0] + delta_x)
+##            posx = round(x*self.submap_size_pix[0] + delta_x)
 ##            for y in range(self.n_submaps[1]):
-##                posy = round(y*self.submap_size[1] + delta_y)
+##                posy = round(y*self.submap_size_pix[1] + delta_y)
 ##                blits.append((self.surfaces[x][y][t], (posx,posy)))
 ##        screen.blits(blits)
 
     def extract_static_img(self, coord, frame, img):
         """blit on <img> self's graphics present at <coord>"""
         cs = self.cell_size
-        nx = int(200/cs)
+        nx = int(200/cs) #why 200 ?
         ny = int(200/cs)
         size_x = nx*cs
         size_y = ny*cs
@@ -608,14 +625,14 @@ class GraphicalMap(PygameGrid):
         if s:
             img.blit(s, (-xpix, -ypix))
 
-    def get_cell_rect_at_coord_in_submap(self, cell_coord):
-        xc,yc = cell_coord
-        xpix_tot = xc*self.cell_size
-        ypix_tot = yc*self.cell_size
-        surfx = xpix_tot//self.submap_size[0]
-        surfy = ypix_tot//self.submap_size[1]
-        xpix_sub = xpix_tot - surfx*self.submap_size[0]
-        ypix_sub = ypix_tot - surfy*self.submap_size[1]
-        return pygame.Rect(xpix_sub,ypix_sub,self.cell_size,self.cell_size)
+##    def get_cell_rect_at_coord_in_submap(self, cell_coord):
+##        xc,yc = cell_coord
+##        xpix_tot = xc*self.cell_size
+##        ypix_tot = yc*self.cell_size
+##        surfx = xpix_tot//self.submap_size_pix[0]
+##        surfy = ypix_tot//self.submap_size_pix[1]
+##        xpix_sub = xpix_tot - surfx*self.submap_size_pix[0]
+##        ypix_sub = ypix_tot - surfy*self.submap_size_pix[1]
+##        return pygame.Rect(xpix_sub,ypix_sub,self.cell_size,self.cell_size)
 
 

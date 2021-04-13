@@ -16,12 +16,8 @@ from RpgMap.mapobjects.objects import MapObject
 def generate_map():
     mi = MapInitializer("First demo map")
 ##    mi.chunk = (random.randint(0,1000), random.randint(0,1000))
-##    mi.chunk = (217, 60)
     mi.chunk = (1310,15)
-    ####mi = maps.map1 #go in mymaps.py and PLAY with the parameters !
-    ##mi.village_homogeneity = 0.1
-    wm,hm = 32,32
-    mi.world_size = (wm,hm)
+    mi.chunk_size = (32,32) #size of a chunk
 ##    mi.set_terrain_type(terrain_plains, colorscale_normal)
     #dont forget to adapt terrain and colorscale to the actual map generated.
     mi.set_terrain_type(terrain_medium, colorscale_normal)
@@ -31,7 +27,7 @@ def generate_map():
 ##    mi.zoom_cell_sizes = [32, 16] #two zoom levels
     mi.zoom_cell_sizes = [32] #one zoom level
     me = mi.configure_map_editor(FPS) #me = "Map Editor"
-    img = me.get_hmap_img((wm*10,hm*10))
+    img = me.get_hmap_img((mi.chunk_size[0]*10,mi.chunk_size[1]*10))
     return me, img, mi
 
 def refresh():
@@ -124,3 +120,5 @@ app.quit()
 
 #enlever unit juste pour le git
 #adapter gui
+
+#opti : basegrid utilise la periodicite. Si on enleve ça, peut gagner qques operations.

@@ -28,9 +28,9 @@ class Camera:
         c.surface = pygame.Surface(self.surface.get_size())
         return c
 
-    def set_parameters(self, world_size, cell_size):
+    def set_parameters(self, chunk_size, cell_size):
         self.cell_size = cell_size
-        self.nx, self.ny = world_size
+        self.nx, self.ny = chunk_size
         self.map_size_pix = (self.nx*self.cell_size, self.ny*self.cell_size)
         self.surface = pygame.Surface((self.me.W, self.me.H))
 ##        map_size = self.nx*self.cell_size, self.ny*self.cell_size
@@ -66,12 +66,14 @@ class Camera:
 
     def draw_map_smart(self, screen, show_grid_lines):
         r = self.get_visible_map_rect()
+##        r.inflate((-200,-200)) #pk ok ?
         xpix, ypix = self.get_dpix()
         #
         topleft = self.get_coord_at_pix(r.topleft)
         bottomright = self.get_coord_at_pix(r.bottomright)
 ##        print("***",topleft, bottomright)
         #
+##        self.lm.draw(self.surface, xpix, ypix)
         self.lm.draw_smart(self.surface, xpix, ypix, topleft, bottomright)
         if show_grid_lines:
             self.draw_grid_lines(self.surface)

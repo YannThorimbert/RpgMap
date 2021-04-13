@@ -460,7 +460,8 @@ class MapInitializer:
         for x,y,h in self.heights:
             me.hmap[x][y] = h
         if graphical_load:
-            img = thorpy.get_resized_image(me.original_img_hmap, thorpy.get_screen().get_size(), max)
+            img = thorpy.get_resized_image(me.original_img_hmap,
+                                        thorpy.get_screen().get_size(), max)
             thorpy.get_screen().blit(img, (0,0))
             self.update_loading_bar("Building tilers...",0.2)
         self.build_materials(me, fast, use_beach_tiler, load_tilers)

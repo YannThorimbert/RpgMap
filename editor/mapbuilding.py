@@ -63,7 +63,7 @@ class MapInitializer:
         self.loading_bar = None
         self.name = name #name of the map
         ############ terrain generation:
-        self.world_size = (128,128) #in number of cells. Put a power of 2 for tilable maps
+        self.chunk_size = (128,128) #in number of cells. Put a power of 2 for tilable maps
         self.chunk = (1310,14) #Kind of seed. Neighboring chunk give tilable maps.
         self.persistance = 2. #parameter of the random terrain generation.
         self.n_octaves = "max" #parameter of the random terrain generation.
@@ -174,7 +174,7 @@ class MapInitializer:
         me.box_hmap_margin = self.box_hmap_margin
         me.menu_width = self.menu_width
         me.max_wanted_minimap_size = self.max_wanted_minimap_size
-        me.world_size = self.world_size
+        me.chunk_size = self.chunk_size
         me.chunk = self.chunk
 ##        me.current_chunk = self.chunk
         me.persistance = self.persistance
@@ -551,7 +551,7 @@ def build_hmap(me):
     #Here we build the miniature map image
 
     img_hmap = ng.build_surface(hmap, me.colorscale_hmap)
-    new_img_hmap = pygame.Surface(me.world_size)
+    new_img_hmap = pygame.Surface(me.chunk_size)
     new_img_hmap.blit(img_hmap, (0,0))
     img_hmap = new_img_hmap
     me.build_camera(img_hmap)
