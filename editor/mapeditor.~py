@@ -21,6 +21,7 @@ def sgn(x):
         return 1.
     return 0.
 
+mo = thorpy.Monitor()
 
 class MapEditor:
 ##    saved_attrs = ["zoom_cell_sizes", "nframes", "fps", "menu_width",
@@ -82,9 +83,10 @@ class MapEditor:
         self.neigh_maps = {}
         #
         self.surfaces32 = []
+        self.delta_cam = V2()
 
 
-    def refresh_neigh_maps(self, find_new_main):
+    def refresh_neigh_maps(self):
         r = self.screen_rect
         xc, yc = self.cam.get_coord_at_pix(r.center)
         delta_c = xc//self.cam.nx, yc//self.cam.ny
@@ -220,6 +222,7 @@ class MapEditor:
                                         reac_name="zoom slide")
             self.e_box.add_reaction(reac_zoom)
         ########################################################################
+        thorpy.add_keydown_reaction(self.e_box, pygame.K_m, reset_mo)
         thorpy.add_keydown_reaction(self.e_box, pygame.K_KP_PLUS,
                                     self.increment_zoom, params={"value":-1},
                                     reac_name="k plus")
@@ -454,10 +457,11 @@ class MapEditor:
 
 
     def draw_as_neigh(self, neigh_map):
+        #blit terrain + static objects
         neigh_map.cam.draw_map(self.screen, self.show_grid_lines)
         #blit cursor
 ##        self.cam.draw_rmouse(self.screen, self.box_hmap.get_rect())
-        #blit objects
+        #blit dynamic objects
         neigh_map.cam.draw_objects(self.screen, self.dynamic_objects, draw_ui=False)
         #blit smoke effects
 ##        self.game.refresh_smokes()
@@ -475,7 +479,9 @@ class MapEditor:
 
     def draw(self):
         #blit map frame
+        mo.append("a")
         self.screen.fill((0,0,0))
+        mo.append("b")
         #blit map
 ##        self.cam.draw_map(self.screen, self.show_grid_lines)
         #
@@ -486,23 +492,31 @@ class MapEditor:
             nm.cam.pos_cells.x = self.cam.pos_cells.x
             nm.cam.pos_cells.y = self.cam.pos_cells.y
             self.draw_as_neigh(nm)
+        mo.append("c")
         #draw border
         rect = self.cam.get_visible_map_rect()
         pygame.draw.rect(self.screen, (255,0,0), rect, 3)
+        mo.append("d")
         #
         #blit cursor
 ##        self.cam.draw_rmouse(self.screen, self.box_hmap.get_rect())
         #blit objects
         self.cam.draw_objects(self.screen, self.dynamic_objects, True)
+        mo.append("e")
         #blit smoke effects
         self.game.refresh_smokes()
         #update right pane
         self.update_cell_info()
         #blit right pane and draw rect on minimap
         self.e_box.blit()
+        self.delta_cam = V2()
         #blit cursor
 ##        self.cam.draw_rmouse(self.screen, self.box_hmap.get_rect())
 ##        pygame.draw.rect(self.screen, (255,255,255), self.cam.rmouse, 1)
+        mo.append("f")
+        if self.game.t%100 == 0:
+            mo.show(rnd=2)
+            print()
 
 
 
@@ -524,7 +538,7 @@ class MapEditor:
         for o in self.dynamic_objects:
             o.refresh_translation_animation()
         self.process_mouse_navigation()
-        self.draw()
+        self.draw() #most of the time is spent here
         self.ap.refresh()
         self.ap.draw(self.screen, 20,20)
         #
@@ -535,6 +549,7 @@ class MapEditor:
         #
         for nm in self.neigh_maps.values():
             nm.lm.next_frame()
+
 
 
     def func_reac_click(self, e):
@@ -587,10 +602,12 @@ class MapEditor:
             for e in self.alert_elements:
                 self.ap.add_alert_countdown(e, guip.DELAY_HELP * self.fps)
 
+##    xx plutot a faire au func time ??? TOUT ca, grace a delta_cam = V2(x,y)
     def move_cam_and_refresh(self, delta):
         self.cam.move(delta)
+        self.delta_cam += delta
         self.cam.refresh_gm_pos()
-        self.refresh_neigh_maps(find_new_main=True)
+        self.refresh_neigh_maps()
 
     def add_unit(self, coord, obj, quantity=None):
         cell = self.lm.get_cell_at(coord[0],coord[1])
@@ -618,7 +635,7 @@ class MapEditor:
             center_of_map_layout = self.W//2, self.H//2
             d = V2(pos) - center_of_map_layout
             if d != (0,0):
-                intensity = d.length_squared()**1.5
+                intensity = 1e-6*d.length_squared()**1.5
                 if intensity > 1.:
                     intensity = 1.
                 d.scale_to_length(intensity)
@@ -635,11 +652,13 @@ class MapEditor:
 ##                    d.y = 0
 ##                elif self.cam.pos_cells.y - marginy < 0 and d.y < 0:
 ##                    d.y = 0
-                self.cam.move(d*MOUSE_NAV_FACTOR)
+                delta = d*MOUSE_NAV_FACTOR
+                self.cam.move(delta)
+                self.delta_cam += delta
                 self.cam.refresh_gm_pos()
                 for e in self.alert_elements:
                     self.ap.add_alert_countdown(e, guip.DELAY_HELP * self.fps)
-                self.refresh_neigh_maps(find_new_main=True)
+                self.refresh_neigh_maps()
 
     def load_image(self, fn):
         img = thorpy.load_image(fn)

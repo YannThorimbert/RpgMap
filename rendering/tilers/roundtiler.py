@@ -165,6 +165,8 @@ def get_round_river(radius_divider, corner, front):
             if rx2 + (y-centery)**2 > r2:
                 n_a[x][y] = 255  #alpha background = 255
                 n_rgb[x][y] = b_b_c_rgb[x][y]
+##            else:
+##                n_rgb[x][y] = (b_b_c_rgb[x][y]+n_rgb[x][y])//2
     del n_a
     del n_rgb
     surface.unlock()

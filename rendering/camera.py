@@ -2,6 +2,8 @@ import pygame
 from pygame.math import Vector2 as V2
 from RpgMap.gui.parameters import RMOUSE_COLOR
 
+from thorpy import Monitor
+mo = Monitor()
 
 ##DELTA_STATIC_OBJECTS = [(1,0),(-1,0),(0,-1),(0,1),(0,0),
 ##                        (1,1), (-1,1), (1,-1), (-1,-1)]
@@ -16,6 +18,14 @@ class Camera:
         self.map_size_pix = None
         self.me = None
         self.surface = None
+        #
+        self.so_first = set()
+        self.to_sort = set()
+        self.so_last = set()
+        self.so_first_blit = []
+        self.so_second_blit = []
+        self.so_last_blit = []
+        self.need_to_recompute_static_objs = True #set this to False each time a static object is added to the map!
 
     def copy(self, lm):
         c = Camera()
@@ -66,6 +76,7 @@ class Camera:
         self.lm.draw(self.surface, xpix, ypix, topleft, bottomright)
         if show_grid_lines:
             self.draw_grid_lines(self.surface)
+        self.control_static_objects(self.surface, False)
         screen.blit(self.surface, r.topleft, r)
 
     def get_visible_map_rect(self):
@@ -169,8 +180,10 @@ class Camera:
             else:
                 if o.is_ground:
                     force_drawn_first.add((rect,img,o))
-                elif "bridge" in o.str_type:
-                    force_drawn_first.add((rect,img,o))
+##                elif "bridge" in o.str_type:
+##                    print(o.int_type)
+##                    assert False
+##                    force_drawn_first.add((rect,img,o))
                 else:
                     to_sort.add((rect,img,o))
             self.log_static_objects_around(o, to_sort, drawn_last)
@@ -184,6 +197,71 @@ class Camera:
         screen.blits(drawn_last)
         if draw_ui:
             self.ui_manager.draw_after_objects(s)
+
+
+
+    #How it works:
+    #   We collect all the objects to be drawn, plus the static objects around them.
+    #   Then, we sort this big list by rect bottom coord, and we draw them.
+    def control_static_objects(self, screen, draw_ui):
+        s = self.lm.get_current_cell_size()
+        if self.need_to_recompute_static_objs: #or initialize !
+##        if True:
+            print("***RELOG", self.lm.me.game.t)
+            self.so_log = self.lm.static_objects
+            if draw_ui:
+                self.ui_manager.draw_before_objects(s)
+            self.to_sort = set()
+            self.so_last = set()
+            self.so_first = set()
+            for o in self.so_log:
+                if o.hide:
+                    continue
+                rect, img = o.get_fakerect_and_img(s)
+                if o.always_drawn_last:
+                    self.so_last.add((rect,img,o))
+                else:
+                    if o.is_ground:
+                        self.so_first.add((rect,img,o))
+                    else:
+                        self.to_sort.add((rect,img,o))
+                self.log_static_objects_around(o, self.to_sort, self.so_last)
+            self.build_blit_lists()
+            self.need_to_recompute_static_objs = False
+##        elif dx!=0 or dy!=0: #just get delta
+        else:
+            self.build_blit_lists_move()
+##        else:
+##            self.modify_blit_lists()
+        self.draw_static_objects(screen)
+        if draw_ui:
+            self.ui_manager.draw_after_objects(s)
+
+    def build_blit_lists(self):
+        self.so_first_blit = [(img,rect) for rect,img,o in self.so_first] #xx enlever le o.hide !?
+        self.so_second_blit = [(img,rect) for rect,img,o in self.to_sort]
+        self.so_second_blit.sort(key=lambda x:x[1][3])
+        self.so_last_blit = [(img,rect) for rect,img,o in self.so_last]
+
+    def build_blit_lists_move(self):
+        self.so_first_blit = self.build_blit_list_move(self.so_first)
+        self.so_second_blit = self.build_blit_list_move(self.to_sort)
+        self.so_second_blit.sort(key=lambda x:x[1][3])
+        self.so_last_blit = self.build_blit_list_move(self.so_last)
+
+    def build_blit_list_move(self, objs): #xx add delta to rect ? sinon, on peut tout faire en intension
+        s = self.lm.get_current_cell_size()
+        return [o.get_img_and_fakerect(s) for r,i,o in objs]
+##        so = []
+##        for r,i,o in objs:
+##            rect, img = o.get_fakerect_and_img(s)
+##            so.append((img,rect))
+##        return so
+
+    def draw_static_objects(self, screen):
+        screen.blits(self.so_first_blit)
+        screen.blits(self.so_second_blit)
+        screen.blits(self.so_last_blit)
 
 
 

@@ -22,7 +22,7 @@ def generate_map():
     #dont forget to adapt terrain and colorscale to the actual map generated.
     mi.set_terrain_type(terrain_medium, colorscale_normal)
     mi.max_number_of_roads = 0
-    mi.max_number_of_rivers = 1
+    mi.max_number_of_rivers = 4
     mi.min_river_length = 12
 ##    mi.zoom_cell_sizes = [32, 16] #two zoom levels
     mi.zoom_cell_sizes = [32] #one zoom level
@@ -40,7 +40,7 @@ def refresh():
         button_genmap.blit()
     pygame.display.flip()
 
-W,H = 1200, 700 #screen size
+W,H = 1000, 700 #screen size
 app = thorpy.Application((W,H))
 FPS = 80
 
@@ -79,33 +79,37 @@ game.set_fire((10,10), ("village","forest","windmill"))
 #adding a smoke:
 ##game.add_smoke("large", (10,10))
 
-me.refresh_neigh_maps(False)
+me.refresh_neigh_maps()
 
 m = thorpy.Menu(me.e_box,fps=me.fps)
 m.play()
 
 app.quit()
 
-#1. revenir a version qui marche
-#2 fonctions smart pour travailler.
-##se construit a build_surfaces, et plus jamais appele, mais pas d'objet dsssus!
-# ==> flag built[t] sur cellules set a True par blit_object
+#differencier les objets statiques uniframe des objets statiques multiframes... (majorité est uniframe!)
+#tileable chunks : refaire les statics des frontières !
 
-#utiliser numpy uniquement !
-#normaliser par une constante (qui est une fonction des octaves!?) et controler les overflow : parametriser
-
-#objets
-#map de static peut etre moins bien resolue, puis interpolation
 
 #map slownesses : centralisees dans structure a part
 #synchro des frames eau
+#arreter d'appeler autre chose que draw as neigh dans func_reac_time
 
-#tileable chunks : refaire les statics des frontières !
+#petit a petit, au moment du blit des objets, bliter en statique. Tout est fait dans mapgrid pour un reblit optimise des statiques en zbuffer.
+
+#static object existe plus ?
+#draw objects : faire + rapide que "bridge" etc.
+
+#utiliser numpy uniquement ! ?...
+#normaliser par une constante (qui est une fonction des octaves!?) et controler les overflow : parametriser
+
 
 #zoom a corriger
-#efaire sur screen directement et mesurer impact
+#refaire sur screen directement et mesurer impact
+################################################################################
+################################################################################
 
-
+#bugs mouse navigation
+#bug click droit, affichage trop haut
 #virer is_main, heights
 
 
@@ -126,3 +130,5 @@ app.quit()
 #adapter gui
 
 #opti : basegrid utilise la periodicite. Si on enleve ça, peut gagner qques operations.
+
+#map de static peut etre moins bien resolue, puis interpolation

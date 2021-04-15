@@ -12,6 +12,11 @@ class NeighMap:
         #
         fast, use_beach_tiler, load_tilers = False, True, False
         self.lm = mi.build_neigh(self.me, chunk)
+        self.lm.chunk = chunk
+        self.cam = self.me.cam.copy(self.lm)
+        self.lm.cam = self.cam
         self.map_initializer = mi
         self.me.add_lm_to_object_dict(self.lm)
-        self.cam = self.me.cam.copy(self.lm)
+
+    def get_chunk(self):
+        return self.lm.chunk

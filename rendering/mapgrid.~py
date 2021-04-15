@@ -15,8 +15,8 @@ GRASS = 0
 class LogicalCell:
 
     def __init__(self, h, coord, logical_map):
-        self.map = logical_map
-        self.couple = get_couple(h, self.map.material_couples)
+        self.lm = logical_map
+        self.couple = get_couple(h, self.lm.material_couples)
         self.h = h
         self.coord = coord
         if h > self.couple.transition:
@@ -31,28 +31,31 @@ class LogicalCell:
         self.unit = None
 ##        self.imgs = None
 
+    def get_chunk(self):
+        return self.lm.chunk
+
     def get_game(self):
-        return self.map.me.game
+        return self.lm.me.game
 
     def set_name(self,name):
         self.name = name
-        self.map.me.modified_cells.append(self.coord)
+        self.lm.me.modified_cells.append(self.coord)
 
     def get_neighbors_von_neuman(self):
         for dx,dy in VON_NEUMAN:
-            yield self.map.get_cell_at(self.coord[0]+dx, self.coord[1]+dy)
+            yield self.lm.get_cell_at(self.coord[0]+dx, self.coord[1]+dy)
 
     def get_neighbors_moore(self):
         for dx,dy in VON_NEUMAN:
-            yield self.map.get_cell_at(self.coord[0]+dx, self.coord[1]+dy)
+            yield self.lm.get_cell_at(self.coord[0]+dx, self.coord[1]+dy)
         for dx,dy in MOORE:
-            yield self.map.get_cell_at(self.coord[0]+dx, self.coord[1]+dy)
+            yield self.lm.get_cell_at(self.coord[0]+dx, self.coord[1]+dy)
 
     def get_altitude(self):
         return (self.h-0.6)*2e4
 
     def get_static_img_at_zoom(self, level):
-        return self.map.get_static_img_at_zoom(self.coord, level)
+        return self.lm.get_static_img_at_zoom(self.coord, level)
 
     def has_object_name(self, name):
         for o in self.objects:
@@ -115,6 +118,7 @@ class LogicalMap(BaseGrid):
         self.colorkey = None #used at build_surface()
         self.static_objects = []
         self.me = None
+        self.chunk = None
 
 
     def get_slowness(self,number):
@@ -371,16 +375,16 @@ class GraphicalMap(PygameGrid):
                 img = self[(x,y)].imgs[frame_t]
                 s.blit(img, (xpix-glob_posx_pix,ypix-glob_posy_pix))
                 #
-                cell = self.lm[x,y]
-                ground = [o for o in cell.objects if o.is_ground]
-                not_ground = [o for o in cell.objects if not(o.is_ground)]
-                sort = True
-                if sort:
-                    not_ground.sort(key=lambda x: x.ypos())
-                for o in ground:
-                    self.blit_object_at_frame(o, frame_t)
-                for o in not_ground:
-                    self.blit_object_at_frame(o, frame_t)
+##                cell = self.lm[x,y]
+##                ground = [o for o in cell.objects if o.is_ground]
+##                not_ground = [o for o in cell.objects if not(o.is_ground)]
+##                sort = True
+##                if sort:
+##                    not_ground.sort(key=lambda x: x.ypos())
+##                for o in ground:
+##                    self.blit_object_at_frame(o, frame_t)
+##                for o in not_ground:
+##                    self.blit_object_at_frame(o, frame_t)
         if self.colorkey is not None:
             s.set_colorkey(self.colorkey)
 ##        self.surfaces[submap_x][submap_y][frame_t] = s
@@ -475,12 +479,11 @@ class GraphicalMap(PygameGrid):
     def blit_object_at_frame(self, obj, t):
         """blit images <obj_img> on self's surface"""
         delta = obj.relpos
-        dx, dy = int(delta[0]*self.cell_size), int(delta[1]*self.cell_size)
+        reldx, reldy = int(delta[0]*self.cell_size), int(delta[1]*self.cell_size)
         xobj, yobj = obj.cell.coord
         obj_rect = obj.imgs_z_t[self.level][0].get_rect()
         obj_rect.center = (self.cell_size//2,)*2
-        obj_rect.move_ip(dx,dy)
-        print(obj_rect)
+        obj_rect.move_ip(reldx, reldy)
         surfx = xobj//self.submap_size_cells[0]
         surfy = yobj//self.submap_size_cells[0]
         xpix = xobj*self.cell_size - surfx*self.submap_size_pix[0] + obj_rect.x #xx simplifiable ?
@@ -496,9 +499,10 @@ class GraphicalMap(PygameGrid):
 ##                    if s:
 ##                        s.blit(img, (x,y))
 ##                    else:
-##                        assert False
-##                        self.build_surface(cx,cy,t)
-##                        self.surfaces[cx][cy][t].blit(img, (x,y))
+##                        pass
+####                        assert False
+####                        self.build_surface(cx,cy,t)
+####                        self.surfaces[cx][cy][t].blit(img, (x,y))
 
         cx, cy = surfx, surfy
         img = obj.imgs_z_t[self.level][t%obj.nframes]
@@ -575,8 +579,8 @@ class GraphicalMap(PygameGrid):
 ##    Les autres cellules, donc, se redessinnent, mais on ne blitte que ca !
 
 
-
     def draw(self, screen, x0, y0, dxpix, dypix, t, topleft, bottomright):
+        """Draw the map, submap by submap."""
         #x0 = current_x from lm
         delta_x = dxpix + x0*self.cell_size
         delta_y = dypix + y0*self.cell_size
@@ -597,11 +601,11 @@ class GraphicalMap(PygameGrid):
                         if surf:
                             screen.blit(surf, point)
                         else:
-                            print("build surf", x, y, t)
+##                            print("build surf", x, y, t)
                             self.build_surface(x,y,t)
                             screen.blit(self.surfaces[x][y][t], point)
                         #draw submap border:
-##                        pygame.draw.rect(screen, (0,0,255), pygame.Rect(posx,posy,self.submap_size_pix[0],self.submap_size_pix[1]),1)
+                        pygame.draw.rect(screen, (0,0,255), pygame.Rect(posx,posy,self.submap_size_pix[0],self.submap_size_pix[1]),1)
         #now blit static objects
 ##        for x in range(self.n_submaps[0]):
 ##            x_loc_i = x * self.submap_size_cells[0]

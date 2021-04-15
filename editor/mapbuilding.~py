@@ -433,8 +433,8 @@ class MapInitializer:
         lm.build_surfaces() #0%
         e = time.time()
         sort_objects = True
-##        lm.blit_objects(sort=sort_objects) #64% blit objs on graphical maps
-        lm.blit_objects_smart() #64%
+        lm.blit_objects(sort=sort_objects) #64% blit objs on graphical maps
+##        lm.blit_objects_smart() #64%
         f = time.time()
         #monitoring
         tot_time = f-a
@@ -536,6 +536,7 @@ class MapInitializer:
 def build_lm(me):
     """Build the logical map corresponding to me's properties"""
     lm = me.build_map() #build a logical map with me's properties
+    lm.cam = me.cam
     lm.frame_slowness1 = max(1,me.fps//7) #frame will change every k*FPS [s]
     lm.frame_slowness2 = max(1,lm.frame_slowness1 // 2)
     lm.frame_slowness3 = 2 * lm.frame_slowness1

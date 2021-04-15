@@ -81,7 +81,12 @@ class CellInfo:
     def __init__(self, me, size, cell_size, redraw, external_e):
         self.me = me
         self.wline = int(0.75*size[0])
-        self.e_coordalt = thorpy.make_text("(?,?)", font_size=10, font_color=(200,200,200))
+        self.e_coord_name = thorpy.make_text("Coord :", 12, (50,50,50))
+        self.e_coordalt = thorpy.make_text("(?,?)", font_size=12, font_color=(50,50,50))
+        self.e_group_coord = thorpy.make_group([self.e_coord_name, self.e_coordalt])
+        self.e_chunk_name = thorpy.make_text("Chunk :", 12, (50,50,50))
+        self.e_chunk = thorpy.make_text("(?,?)", font_size=12, font_color=(50,50,50))
+        self.e_group_chunk = thorpy.make_group([self.e_chunk_name, self.e_chunk])
         self.e_mat_img = thorpy.Image.make(pygame.Surface(cell_size))
         self.e_mat_name = guip.get_text("")
         self.e_obj_name = guip.get_text("")
@@ -89,7 +94,7 @@ class CellInfo:
 ##        self.e_mat = thorpy.make_group([self.e_mat_img, self.e_mat_obj])
         self.e_mat = thorpy.Box(elements=[self.e_mat_img, self.e_mat_obj])
 ##        self.e_mat.fit_children(axis=(False, True))
-        self.elements = [self.e_mat, self.e_coordalt]
+        self.elements = [self.e_mat, self.e_group_coord]
         self.e = thorpy.Box.make(self.elements)
         self.e.set_main_color(self.BKG_COLOR)
         self.e.set_size((size[0],int(0.8*self.e.get_fus_size()[1])), margins=(2,2))
@@ -254,12 +259,19 @@ class CellInfo:
         #
 ##        altitude = round(cell.get_altitude())
 ##        alt_text = str(altitude) + "m"
-        coord_text = str(cell.coord)# + "     "
 ##        self.e_coordalt.set_text(coord_text+alt_text)
+        coord_text = str(cell.coord)# + "     "
         self.e_coordalt.set_text(coord_text)
-        self.e_coordalt.fit_children()
+##        self.e_coordalt.fit_children()
 ##        self.e_coordalt.recenter()
+        chunk_text = str(cell.get_chunk())
+        self.e_chunk.set_text(chunk_text)
         thorpy.store(self.e)
+##        thorpy.get_screen().fill((0,0,255))
+##        self.e.blit()
+##        pygame.draw.rect(thorpy.get_screen(), (0,0,0), self.e_coordalt.get_fus_rect())
+##        pygame.display.flip()
+##        thorpy.get_application().pause()
 
     def can_be_launched(self, cell, me):
         if cell:
@@ -271,6 +283,7 @@ class CellInfo:
 
 
 class UnitInfo: #name, image, nombre(=vie dans FS!)
+    BKG_COLOR = (190,)*3
     def __init__(self, me, size, cell_size, redraw, external_e):
         self.me = me
         self.wline = int(0.75*size[0])

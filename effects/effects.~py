@@ -25,7 +25,6 @@ class GameSmoke:
         delta_pos = self.pos - self.old_pos
         self.old_pos = V2(self.pos)
         #3. Update old smokes
-        print("***smoke", delta_pos)
         self.sg.translate_old_elements(delta_pos)
 
     def generate(self):
@@ -82,7 +81,7 @@ def draw_ashes(game, obj, n=40, frame=0):
     for i,c in enumerate(ash_shades):
         ashlets[i].fill(c)
     cs = me.lm.get_current_cell_size()
-    rect, img = obj.get_fakerect_and_img(cs)
+    rect, img = obj.get_rect_and_img(cs)
     ash = thorpy.graphics.get_shadow(img,
                                     shadow_radius=ash_radius,
                                     black=255,
@@ -104,7 +103,8 @@ def draw_ashes(game, obj, n=40, frame=0):
     n2 = 20
     for i in range(n2):
         me.draw()
-        me.screen.blit(ash, rect)
+        fakerect = (rect.x, rect.y, rect.right, rect.bottom)
+        me.screen.blit(ash, fakerect)
         pygame.display.flip()
         clock.tick(me.fps)
     for i in range(n):
@@ -117,7 +117,8 @@ def draw_ashes(game, obj, n=40, frame=0):
             blits.append((random.choice(ashlets), (x,y)))
         ash.blits(blits)
         me.draw()
-        me.screen.blit(ash, rect)
+        fakerect = (rect.x, rect.y, rect.right, rect.bottom)
+        me.screen.blit(ash, fakerect)
         pygame.display.flip()
         clock.tick(me.fps)
     smokegen_mod = tmp

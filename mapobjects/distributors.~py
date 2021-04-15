@@ -23,7 +23,7 @@ class DistributionDescriptor:
         self.max_density = 1 #number of time an object can be added to a cell
         self.homogeneity = 0.2 #probability of actually adding 1 object to a cell
         self.zones_spread = [(0.,1.)] #Seq. of (altitude, altitude_spread)
-        self.exclusive = False
+        self.exclusive = True
         #e.g : (0.5, 0.2) means you will find this object from h=0.3 to h=0.7
 
     def get(self, name):
@@ -31,21 +31,31 @@ class DistributionDescriptor:
 
     def add(self, fn, size_multiplier=1., max_relpos=(0,0), min_relpos=(0,0),
             is_ground=False, flip=True):
-        o = ObjectDescriptor(fn, size_multiplier, max_relpos, min_relpos,
+        od = ObjectDescriptor(fn, size_multiplier, max_relpos, min_relpos,
                             is_ground, flip)
-        self.descriptors[o.name] = o #silently replace existing ones !
-
+##        if self.name == "caca":
+##            print(od.max_relpos, od.min_relpos)
+##            assert False
+        self.descriptors[od.name] = od #silently replace existing ones !
 
     def build_objects(self, me):
         self.objects = []
         for od in self.descriptors.values():
             o = od.build_object(me, self.name)
+##            if self.name == "caca":
+##                print(od.max_relpos, od.min_relpos)
+##                print(o.name, o.max_relpos, o.min_relpos)
+##                assert False
             self.objects.append(o)
             if o.flip:
                 self.objects.append(o.flip())
 
+##    def set_objects_lm(self, lm):
+##        for o in self.objects:
+##            o.lm = lm
+
     def get_distributor(self, me, lm, omap):
-        distributor = get_distributor(me, lm, self.objects, omap, self.apply_to)
+        distributor = get_distributor(me, lm, self.objects, omap, self.apply_to, limit_relpos_y=False)
         distributor.max_density = self.max_density
         distributor.homogeneity = self.homogeneity
         distributor.zones_spread = self.zones_spread
@@ -85,7 +95,7 @@ def get_distributor(me, lm, objects, forest_map, material_names,
             obj.max_relpos[1] = (1. - obj.factor)/2.
             if obj.min_relpos[1] > obj.max_relpos[1]:
                 obj.min_relpos[1] = obj.max_relpos[1]
-    distributor = RandomObjectDistribution(objects, forest_map, me.lm)
+    distributor = RandomObjectDistribution(objects, forest_map, lm)
     for name in material_names:
         if name in me.materials:
             distributor.materials.append(me.materials[name])
@@ -107,7 +117,7 @@ class RandomObjectDistribution:
         self.zones_spread = [(0.,1.)]
 
 
-    def distribute_objects(self, layer, exclusive=False):
+    def distribute_objects(self, lm, exclusive=False):
         """If exclusive is True, will remove all other objects on cell"""
         nx,ny = self.master_map.nx, self.master_map.ny
         dx, dy = random.randint(0,nx-1), random.randint(0,ny-1)
@@ -122,38 +132,39 @@ class RandomObjectDistribution:
                 cell = self.master_map.cells[x][y]
                 if cell.material in self.materials:
                     if exclusive: #remove all other objects
-                        remove_objects_from_layer(cell, layer)
+                        remove_objects_from_layer(cell, lm)
                     for i in range(self.max_density):
                         if random.random() < self.homogeneity:
                             obj = random.choice(self.objs)
                             obj = obj.add_copy_on_cell(cell)
+                            obj.lm = lm
                             obj.is_static = True
                             obj.randomize_relpos()
-                            layer.static_objects.append(obj)
+                            lm.static_objects.append(obj)
 
 def simple_distribution(me, objs, materials, n):
-    layer = me.lm
+    lm = me.lm
     ntry = 10*n
     counter = 0
-    nx,ny = layer.nx, layer.ny
+    nx,ny = lm.nx, lm.ny
     for i in range(ntry):
         if counter > n:
             return
         x = random.randint(0,nx-1)
         y = random.randint(0,ny-1)
-        cell = layer.get_cell_at(x,y)
+        cell = lm.get_cell_at(x,y)
 ##        print("***Trying", x, y, cell)
         if cell:
 ##            print("     ", cell.material.name, materials)
             if cell.material.name in materials:
-                remove_objects_from_layer(cell, layer)
+                remove_objects_from_lm(cell, lm)
                 obj = random.choice(objs)
                 obj = obj.add_copy_on_cell(cell)
                 obj.is_static = True
                 obj.max_relpos = [0.1, 0.1]
                 obj.min_relpos = [-0.1, 0.1]
                 obj.randomize_relpos()
-                layer.static_objects.append(obj)
+                lm.static_objects.append(obj)
                 counter += 1
 
 ##class RandomInteractiveObjectDistribution:

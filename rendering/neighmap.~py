@@ -5,19 +5,16 @@ import time
 class NeighMap:
 
     def __init__(self, me, chunk):
-        a = time.time()
+        self.chunk = chunk
         self.me = me
         lm = self.me.lm
         mi = me.map_initializer
 ##        mi.chunk = chunk
         #
         fast, use_beach_tiler, load_tilers = False, True, False
-        b = time.time()
         self.lm = mi.build_neigh(self.me, chunk)
-        self.map_initializer = mi
-        c = time.time()
-        self.me.add_lm_to_object_dict(self.lm)
-        d = time.time()
+        self.lm.chunk = chunk
         self.cam = self.me.cam.copy(self.lm)
-        e = time.time()
-        print("***", b-a, c-b, d-c, e-d)
+        self.lm.cam = self.cam
+        self.map_initializer = mi
+        self.me.add_lm_to_object_dict(self.lm)

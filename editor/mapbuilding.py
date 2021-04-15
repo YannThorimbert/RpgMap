@@ -441,6 +441,7 @@ class MapInitializer:
         steps = [b-a,c-b,d-c,e-d,f-e]
         for s in steps:
             print(round(100.*s/tot_time),"% ", end="")
+        print()
         return lm
 
     def init_loading_bar(self):
@@ -536,6 +537,7 @@ class MapInitializer:
 def build_lm(me):
     """Build the logical map corresponding to me's properties"""
     lm = me.build_map() #build a logical map with me's properties
+    lm.cam = me.cam
     lm.frame_slowness1 = max(1,me.fps//7) #frame will change every k*FPS [s]
     lm.frame_slowness2 = max(1,lm.frame_slowness1 // 2)
     lm.frame_slowness3 = 2 * lm.frame_slowness1

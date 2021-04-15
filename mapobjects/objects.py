@@ -28,6 +28,7 @@ class MapObject:
         """<factor> : size factor.
         Object that looks the same at each frame"""
         self.editor = editor
+        self.lm = editor.lm
         ref_size = editor.zoom_cell_sizes[0]
         self.frame_imgs = []
         self.original_imgs = []
@@ -257,7 +258,7 @@ class MapObject:
                 sign = sgn(dx)
                 self.relpos[0] += self.vel * sign
                 if abs(self.relpos[0]) > 1.: #then the object change its cell
-                    self.move_to_cell_occupied(self.editor.lm.get_cell_at(x0+sign,y0))
+                    self.move_to_cell_occupied(self.lm.get_cell_at(x0+sign,y0))
                     if sign > 0:
                         self.relpos[0] = 1. - self.relpos[0]
                     else:
@@ -270,7 +271,7 @@ class MapObject:
                 sign = sgn(dy)
                 self.relpos[1] += self.vel * sign
                 if abs(self.relpos[1]) > 1.: #then the object change its cell
-                    self.move_to_cell_occupied(self.editor.lm.get_cell_at(x0,y0+sign))
+                    self.move_to_cell_occupied(self.lm.get_cell_at(x0,y0+sign))
                     if sign > 0:
                         self.relpos[1] = 1. - self.relpos[1]
                     else:
@@ -280,7 +281,7 @@ class MapObject:
                         self.relpos[1] = 0.
                 return 0, sign
         if self.anim_path == []:
-            self.add_to_final_dest(self.editor.lm.get_cell_at(self.cell.coord[0],self.cell.coord[1]))
+            self.add_to_final_dest(self.lm.get_cell_at(self.cell.coord[0],self.cell.coord[1]))
             self.anim_path = None
         return 0, 0
 
@@ -315,34 +316,34 @@ class MapObject:
             self.imgs_z_t.append(imgs)
 
 ##    def _get_current_frame0(self):
-##        return self.cell.map.t%self.nframes #t is already a modulo ! dont use
+##        return self.cell.lm.t%self.nframes #t is already a modulo ! dont use
 
     def _get_current_frame1(self): #associated to normal
-        return self.cell.map.t1%self.nframes
+        return self.cell.lm.t1%self.nframes
 
     def _get_current_frame2(self): #associated to fast
-        return self.cell.map.t2%self.nframes
+        return self.cell.lm.t2%self.nframes
 
     def _get_current_frame3(self): #associated to slow
-        return self.cell.map.t3%self.nframes
+        return self.cell.lm.t3%self.nframes
 
     def _get_current_frame4(self): #associated to midslow
-        return self.cell.map.t4%self.nframes
+        return self.cell.lm.t4%self.nframes
 
 ##    def _get_map_time1(self):
-##        return self.cell.map.t
+##        return self.cell.lm.t
 
     def _get_map_time1(self):
-        return self.cell.map.t1
+        return self.cell.lm.t1
 
     def _get_map_time2(self): #associated to fast
-        return self.cell.map.t2
+        return self.cell.lm.t2
 
     def _get_map_time3(self): #associated to slow
-        return self.cell.map.t3
+        return self.cell.lm.t3
 
     def _get_map_time4(self): #associated to midslow
-        return self.cell.map.t4
+        return self.cell.lm.t4
 
     def get_current_img(self):
         return self.imgs_z_t[self.editor.zoom_level][self.get_current_frame()]
@@ -370,12 +371,24 @@ class MapObject:
         return ir
 
     def get_fakerect_and_img(self, cell_size):
+        """We need to hash the rects, but Rect is not hashable, so we return
+        a tuple instead."""
         img = self.get_current_img()
-        r = self.editor.cam.get_rect_at_coord(self.cell.coord)
+        r = self.lm.cam.get_rect_at_coord(self.cell.coord)
         ir = img.get_rect()
         ir.center = r.center
         ir.move_ip(self.relpos[0]*cell_size, self.relpos[1]*cell_size)
         return (ir.x, ir.y, ir.right, ir.bottom), img
+
+    def get_img_and_fakerect(self, cell_size):
+        """We need to hash the rects, but Rect is not hashable, so we return
+        a tuple instead."""
+        img = self.get_current_img()
+        r = self.lm.cam.get_rect_at_coord(self.cell.coord)
+        ir = img.get_rect()
+        ir.center = r.center
+        ir.move_ip(self.relpos[0]*cell_size, self.relpos[1]*cell_size)
+        return img, (ir.x, ir.y, ir.right, ir.bottom)
 
     def get_current_cell_rect_center(self, cell_size):
         r = self.get_current_cell_rect(cell_size)

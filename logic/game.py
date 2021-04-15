@@ -36,15 +36,6 @@ class Game:
         self.is_main = True
 
 
-    def set_main_map(self, other):
-        print("*** set main map")
-##        other.cam = self.me.cam
-        self.me.lm = other.lm
-        other.lm.me = self.me
-        self.me.chunk = other.chunk
-        self.me.map_initializer = other.map_initializer
-
-
     def add_bridge(self, coord):
 ##        assert not coord in self.bridges
 ##        bridge = self.find_right_bridge(coord)
