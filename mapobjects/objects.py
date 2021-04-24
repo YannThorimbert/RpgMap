@@ -84,6 +84,8 @@ class MapObject:
         self.is_static = False
         self.hide = False
         self.game = None
+        self.blit_on_gm = None
+        self.blit_on_gm_border = None
 
     def get_cell_coord(self):
         return self.cell.coord
@@ -380,15 +382,6 @@ class MapObject:
         ir.move_ip(self.relpos[0]*cell_size, self.relpos[1]*cell_size)
         return (ir.x, ir.y, ir.right, ir.bottom), img
 
-    def get_img_and_fakerect(self, cell_size):
-        """We need to hash the rects, but Rect is not hashable, so we return
-        a tuple instead."""
-        img = self.get_current_img()
-        r = self.lm.cam.get_rect_at_coord(self.cell.coord)
-        ir = img.get_rect()
-        ir.center = r.center
-        ir.move_ip(self.relpos[0]*cell_size, self.relpos[1]*cell_size)
-        return img, (ir.x, ir.y, ir.right, ir.bottom)
 
     def get_current_cell_rect_center(self, cell_size):
         r = self.get_current_cell_rect(cell_size)

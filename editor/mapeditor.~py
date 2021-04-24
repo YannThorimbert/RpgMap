@@ -23,6 +23,9 @@ def sgn(x):
 
 mo = thorpy.Monitor()
 
+def reset_mo():
+    mo.reset()
+
 class MapEditor:
 ##    saved_attrs = ["zoom_cell_sizes", "nframes", "fps", "menu_width",
 ##                            "max_wanted_minimap_size", "chunk_size", "chunk",

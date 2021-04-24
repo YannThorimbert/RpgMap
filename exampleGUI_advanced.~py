@@ -64,18 +64,18 @@ game = Game(me)
 game.build_map(mi, fast=False, use_beach_tiler=True, load_tilers=False)
 
 #creating a new type of structure:
-windmill_imgs = get_sprite_frames("sprites/windmill_idle.png")
-windmill = MapObject(me, windmill_imgs, "windmill")
-windmill.set_animation_speed("midslow")
-windmill.min_relpos = [0, -0.15]
-windmill.max_relpos = [0, -0.15]
-windmill.randomize_relpos()
+##windmill_imgs = get_sprite_frames("sprites/windmill_idle.png")
+##windmill = MapObject(me, windmill_imgs, "windmill")
+##windmill.set_animation_speed("midslow")
+##windmill.min_relpos = [0, -0.15]
+##windmill.max_relpos = [0, -0.15]
+##windmill.randomize_relpos()
 #add the created structure
-game.add_object((3,3), windmill, 1)
-game.add_object((5,3), windmill, 1)
+##game.add_object((3,3), windmill, 1)
+##game.add_object((5,3), windmill, 1)
 
 #adding fire:
-game.set_fire((10,10), ("village","forest","windmill"))
+##game.set_fire((10,10), ("village","forest","windmill"))
 #adding a smoke:
 ##game.add_smoke("large", (10,10))
 
@@ -86,9 +86,14 @@ m.play()
 
 app.quit()
 
-#differencier les objets statiques uniframe des objets statiques multiframes... (majorité est uniframe!)
-#tileable chunks : refaire les statics des frontières !
+##PK CLIGNOTE ? : seulement aux frontieres. clignote parce que chevauche des fois pas.
+#tileable chunks : refaire les statics des frontières (mais une seule fois), y compris pour les submaps
+#camera : a chaque appel de control_objs, construire la liste de ceux qui doivent etre rechecks (done + border_done)
+##checker les xx
+#blit_static_objects_border appellé inutilement plusieurs fois par frame, une seule suffit. ==> juste boolean pour le moment, apres on peut maintenir une liste de todo
 
+#!!!!!
+#tous les objets sont toujours statiques. a chaque fois qu'on pose un objet, on reblitte les voisins. que des petites listes a trier.
 
 #map slownesses : centralisees dans structure a part
 #synchro des frames eau
@@ -111,7 +116,7 @@ app.quit()
 #bugs mouse navigation
 #bug click droit, affichage trop haut
 #virer is_main, heights
-
+#pour les arbres, on va plutot faire un bouge feuille aléatoire, avec un reblit d'une cellule de temps à autres
 
 #lac : transformer en VRAI shallow qui bouge et qui est ground, sinon moche
 #faire un lac si riviere finit pas dans water : taille et forme du lac

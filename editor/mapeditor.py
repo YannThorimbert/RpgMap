@@ -517,9 +517,9 @@ class MapEditor:
 ##        self.cam.draw_rmouse(self.screen, self.box_hmap.get_rect())
 ##        pygame.draw.rect(self.screen, (255,255,255), self.cam.rmouse, 1)
         mo.append("f")
-        if self.game.t%100 == 0:
-            mo.show(rnd=2)
-            print()
+##        if self.game.t%100 == 0:
+##            mo.show(rnd=2)
+##            print()
 
 
 

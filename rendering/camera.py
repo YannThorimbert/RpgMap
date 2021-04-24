@@ -19,12 +19,6 @@ class Camera:
         self.me = None
         self.surface = None
         #
-        self.so_first = set()
-        self.to_sort = set()
-        self.so_last = set()
-        self.so_first_blit = []
-        self.so_second_blit = []
-        self.so_last_blit = []
         self.need_to_recompute_static_objs = True #set this to False each time a static object is added to the map!
 
     def copy(self, lm):
@@ -144,7 +138,7 @@ class Camera:
     def get_rect_at_pix(self, pix):
         return self.get_rect_at_coord(self.get_coord_at_pix(pix))
 
-    def log_static_objects_around(self, o, to_sort, drawn_last):
+    def log_objects_around(self, o, to_sort, drawn_last):
         """Blit the neighboring objects according to their y-coordinate."""
         x,y = o.cell.coord
         s = self.lm.get_current_cell_size()
@@ -160,6 +154,23 @@ class Camera:
                                 drawn_last.add((so_rect,so_img,so))
                             else:
                                 to_sort.add((so_rect,so_img,so))
+
+    def log_static_objects_around(self, o, to_sort, drawn_last):
+        """Blit the neighboring objects according to their y-coordinate."""
+        x,y = o.cell.coord
+        s = self.lm.get_current_cell_size()
+        for dx,dy in DELTA_STATIC_OBJECTS: #includes 4 neighs + (0,0)
+            cell = self.lm.get_cell_at(x+dx, y+dy)
+            if cell:
+                r = self.get_rect_at_coord(cell.coord)
+                for so in cell.objects:
+                    if so is not o:
+                        if not so.is_ground: #if ground no need to reblit
+                            if so.always_drawn_last:
+                                drawn_last.add(so)
+                            else:
+                                so_rect, so_img = so.get_fakerect_and_img(s)
+                                to_sort.add((so_rect[3],so))
 
     #How it works:
     #   We collect all the objects to be drawn, plus the static objects around them.
@@ -186,7 +197,7 @@ class Camera:
 ##                    force_drawn_first.add((rect,img,o))
                 else:
                     to_sort.add((rect,img,o))
-            self.log_static_objects_around(o, to_sort, drawn_last)
+            self.log_objects_around(o, to_sort, drawn_last)
         ########################################################################
         force_drawn_first = [(img,rect) for rect,img,o in force_drawn_first if not o.hide]
         drawn_second = [(img,rect) for rect,img,o in to_sort if not o.hide]
@@ -208,60 +219,119 @@ class Camera:
         if self.need_to_recompute_static_objs: #or initialize !
 ##        if True:
             print("***RELOG", self.lm.me.game.t)
-            self.so_log = self.lm.static_objects
+            so_log = self.lm.static_objects
             if draw_ui:
                 self.ui_manager.draw_before_objects(s)
-            self.to_sort = set()
+            to_sort = set()
             self.so_last = set()
-            self.so_first = set()
-            for o in self.so_log:
+            self.so_first = []
+            for o in so_log:
+                o.blit_on_gm = [False for i in range(o.lm.nframes)]
+                o.blit_on_gm_border = [False for i in range(o.lm.nframes)]
                 if o.hide:
                     continue
-                rect, img = o.get_fakerect_and_img(s)
                 if o.always_drawn_last:
-                    self.so_last.add((rect,img,o))
+                    self.so_last.add(o)
                 else:
                     if o.is_ground:
-                        self.so_first.add((rect,img,o))
+                        self.so_first.append(o)
                     else:
-                        self.to_sort.add((rect,img,o))
-                self.log_static_objects_around(o, self.to_sort, self.so_last)
-            self.build_blit_lists()
+                        rect, img = o.get_fakerect_and_img(s)
+                        to_sort.add((rect[3],o))
+                self.log_static_objects_around(o, to_sort, self.so_last)
             self.need_to_recompute_static_objs = False
-##        elif dx!=0 or dy!=0: #just get delta
-        else:
-            self.build_blit_lists_move()
-##        else:
-##            self.modify_blit_lists()
-        self.draw_static_objects(screen)
+            self.so_second = list(to_sort)
+            self.so_second.sort(key=lambda x:x[0])
+        ###################
+        t = self.lm.t
+        #blit objects on the core of the submaps
+        for o in self.so_first:
+            self.blit_static_object(o,t)
+        for r,o in self.so_second:
+            self.blit_static_object(o,t)
+        for o in self.so_last:
+            self.blit_static_object(o,t)
+        #handle border objects that may be badly sorted relative to neighboring
+        #submaps
+        self.blit_static_objects_border(t)
         if draw_ui:
             self.ui_manager.draw_after_objects(s)
 
-    def build_blit_lists(self):
-        self.so_first_blit = [(img,rect) for rect,img,o in self.so_first] #xx enlever le o.hide !?
-        self.so_second_blit = [(img,rect) for rect,img,o in self.to_sort]
-        self.so_second_blit.sort(key=lambda x:x[1][3])
-        self.so_last_blit = [(img,rect) for rect,img,o in self.so_last]
 
-    def build_blit_lists_move(self):
-        self.so_first_blit = self.build_blit_list_move(self.so_first)
-        self.so_second_blit = self.build_blit_list_move(self.to_sort)
-        self.so_second_blit.sort(key=lambda x:x[1][3])
-        self.so_last_blit = self.build_blit_list_move(self.so_last)
+    def blit_static_object(self, o, t):
+        if not o.blit_on_gm[t]:
+            done = self.lm.current_gm.blit_object_at_frame(o, t)
+            if done:
+                o.blit_on_gm[t] = True
+##                rect, img = o.get_fakerect_and_img(s)
+##                screen.blit(img, rect)
 
-    def build_blit_list_move(self, objs): #xx add delta to rect ? sinon, on peut tout faire en intension
+    def blit_static_object_border(self, o, t, s):
+        """This function should be called only if o is on the border of a
+        submap."""
+        if o.blit_on_gm_border[t]:
+            return
+        dx = (-1,0,1)
+        dy = (-1,0,1)
+        x0,y0 = o.cell.coord
+        neighbors = []
+        #now collect the neighbors to sort and redraw on o.cell
+        for x in dx:
+            xc = x0 + x
+            if 0 <= xc < self.lm.nx:
+                for y in dy:
+                    yc = y0 + y
+                    if 0 <= yc < self.lm.ny:
+                        coord = (xc, yc)
+                        cell = self.lm[coord]
+                        obj_neighs = cell.objects
+                        if obj_neighs:
+                            obj_neigh = obj_neighs[0]
+                            r,img = obj_neigh.get_fakerect_and_img(s)
+                            neighbors.append((r,obj_neigh))
+        neighbors.sort(key=lambda x:(x[0][3],x[0][2])) #bottom, right
+        gm = self.lm.current_gm
+        for r,obj in neighbors: #include o itslef
+            for x in dx:
+                for y in dy:
+                    coord = (x0+x, y0+y)
+                    done = gm.blit_object_at_frame_on_coord(obj, t, coord)
+                    obj.blit_on_gm_border[t] = done
+
+    def blit_static_objects_border(self, t):
         s = self.lm.get_current_cell_size()
-        return [o.get_img_and_fakerect(s) for r,i,o in objs]
-##        so = []
-##        for r,i,o in objs:
-##            rect, img = o.get_fakerect_and_img(s)
-##            so.append((img,rect))
-##        return so
+        gm = self.lm.current_gm
+        xcell = -1
+        for submap_x in range(gm.n_submaps[0]-1): #ignore border with other global maps !
+            xcell += gm.submap_size_cells[0]
+            for ycell in range(gm.ny):
+                objs = self.lm[xcell,ycell].objects
+                if objs:
+                    self.blit_static_object_border(objs[0], t, s)
+                #
+                objs = self.lm[xcell+1,ycell].objects
+                if objs:
+                    self.blit_static_object_border(objs[0], t, s)
+        ycell = -1
+        for submap_y in range(gm.n_submaps[1]-1): #ignore border with other global maps !
+            ycell += gm.submap_size_cells[1]
+            for xcell in range(gm.submap_size_cells[0]):
+                objs = self.lm[xcell,ycell].objects
+                if objs:
+                    self.blit_static_object_border(objs[0], t, s)
+                #
+                objs = self.lm[xcell,ycell+1].objects
+                if objs:
+                    self.blit_static_object_border(objs[0], t, s)
 
-    def draw_static_objects(self, screen):
-        screen.blits(self.so_first_blit)
-        screen.blits(self.so_second_blit)
-        screen.blits(self.so_last_blit)
+
+##    def blit_static_object(self, screen, o, t, s):
+##        if not o.blit_on_gm[t]:
+##            done = self.lm.current_gm.blit_object_at_frame(o, t)
+##            if done:
+##                o.blit_on_gm[t] = True
+####                rect, img = o.get_fakerect_and_img(s)
+####                screen.blit(img, rect)
 
 
 
