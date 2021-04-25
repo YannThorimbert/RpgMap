@@ -121,6 +121,8 @@ class MapEditor:
             xc,yc = self.cam.get_coord_at_pix(corner)
             delta = xc//self.cam.nx, yc//self.cam.ny
             if not (delta in self.neigh_maps):
+                if delta == (0,0):
+                    print("Building self neigh")
                 self.neigh_maps[delta] = NeighMap(self, delta)
 ##        print(len(self.neigh_maps))
 

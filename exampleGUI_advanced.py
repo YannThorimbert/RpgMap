@@ -86,13 +86,22 @@ m.play()
 
 app.quit()
 
+#quand une nouvelle submap est construire, remettre tous les objets de bordure des submaps adjacentes à blit_on_border = False,
+#parce qu'ils ont été mis a True lorsque la surface etait pas construite
+
+#mais trop lent quand meme !
+
+#faire un tag par submap ?
+#cam ne touche pas à mapgrid tant que lm.t n'a pas changé! ==> cam.last_t
+
 ##PK CLIGNOTE ? : seulement aux frontieres. clignote parce que chevauche des fois pas.
-#tileable chunks : refaire les statics des frontières (mais une seule fois), y compris pour les submaps
+#mystère des rivières
+
 #camera : a chaque appel de control_objs, construire la liste de ceux qui doivent etre rechecks (done + border_done)
 ##checker les xx
 #blit_static_objects_border appellé inutilement plusieurs fois par frame, une seule suffit. ==> juste boolean pour le moment, apres on peut maintenir une liste de todo
 
-#!!!!!
+#!!!!!m
 #tous les objets sont toujours statiques. a chaque fois qu'on pose un objet, on reblitte les voisins. que des petites listes a trier.
 
 #arbres peut sembler dans riviere a cause de relpos (ou riviere dans arbre)

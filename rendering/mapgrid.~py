@@ -520,11 +520,14 @@ class GraphicalMap(PygameGrid):
             obj_ypix -= (cell_surfy-obj_surfy)*self.submap_size_pix[1]
             topleft = (obj_xpix,obj_ypix)
 ##            clip = obj_rect.clip(cell_rect)
-##            r = img.get_rect()
-##            pygame.draw.rect(s, (255,0,0), pygame.Rect(topleft,r.size), 2)
-##            pygame.draw.rect(s, (0,0,0), cell_rect, 2)
+
+            r = img.get_rect()
+            pygame.draw.rect(s, (255,0,0), pygame.Rect(topleft,r.size), 2)
+            pygame.draw.rect(s, (0,0,0), cell_rect, 2)
+
             s.blit(img, topleft)
             return True
+        return False
 
 
 ##    def is_border_and_submap_coord(self, obj):

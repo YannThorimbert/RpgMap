@@ -5,7 +5,6 @@ import time
 class NeighMap:
 
     def __init__(self, me, chunk):
-        self.chunk = chunk
         self.me = me
         lm = self.me.lm
         mi = me.map_initializer
@@ -18,3 +17,9 @@ class NeighMap:
         self.lm.cam = self.cam
         self.map_initializer = mi
         self.me.add_lm_to_object_dict(self.lm)
+        for o in self.lm.static_objects:
+            print(o.name, chunk)
+            assert o.lm is self.lm
+
+    def get_chunk(self):
+        return self.lm.chunk

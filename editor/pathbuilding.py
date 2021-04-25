@@ -140,6 +140,7 @@ def add_river_greedy(me, lm, material_dict, imgs, rounded_river,
     for delta in imgs: #imgs[(dx,dy)][zoom]
         river_obj = MapObject(me, imgs[delta][0], "river", 1.)
         river_obj.is_ground = True
+        river_obj.lm = lm
         objs[delta] = river_obj
     #5) add river cells to map and layer
     for i,cell in enumerate(actual_path):
@@ -170,6 +171,8 @@ def add_river_greedy(me, lm, material_dict, imgs, rounded_river,
                             lm.static_objects.remove(o)
                             neigh.objects.remove(o)
                     river_obj = MapObject(me, imgs[(0,0,None)][0], "river", 1.)
+                    river_obj.is_ground = True
+                    river_obj.lm = lm
                     river_obj = river_obj.add_copy_on_cell(neigh)
                     neigh.name = "river"
                     lm.static_objects.append(river_obj)

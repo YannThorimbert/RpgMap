@@ -439,6 +439,7 @@ class MapInitializer:
         #monitoring
         tot_time = f-a
         steps = [b-a,c-b,d-c,e-d,f-e]
+        print("Neigh built: ",end="")
         for s in steps:
             print(round(100.*s/tot_time),"% ", end="")
         print()

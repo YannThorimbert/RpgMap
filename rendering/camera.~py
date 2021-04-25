@@ -216,7 +216,10 @@ class Camera:
     #   Then, we sort this big list by rect bottom coord, and we draw them.
     def control_static_objects(self, screen, draw_ui):
         s = self.lm.get_current_cell_size()
+        mo.append("a")
+
         if self.need_to_recompute_static_objs: #or initialize !
+            self.border_objects = []
 ##        if True:
             print("***RELOG", self.lm.me.game.t)
             so_log = self.lm.static_objects
@@ -225,7 +228,10 @@ class Camera:
             to_sort = set()
             self.so_last = set()
             self.so_first = []
+##            nframes = self.lm.nframes
             for o in so_log:
+                if self.is_on_border(o):
+                    self.border_objects.append(o)
                 o.blit_on_gm = [False for i in range(o.lm.nframes)]
                 o.blit_on_gm_border = [False for i in range(o.lm.nframes)]
                 if o.hide:
@@ -242,87 +248,128 @@ class Camera:
             self.need_to_recompute_static_objs = False
             self.so_second = list(to_sort)
             self.so_second.sort(key=lambda x:x[0])
-        ###################
+        mo.append("b")
+        #################
         t = self.lm.t
-        #blit objects on the core of the submaps
+        #blit objects on the core of the submaps. Within a given submap, all the
+        #objects are correctly drawn, all at the same time.
         for o in self.so_first:
             self.blit_static_object(o,t)
         for r,o in self.so_second:
             self.blit_static_object(o,t)
         for o in self.so_last:
             self.blit_static_object(o,t)
+        mo.append("c")
         #handle border objects that may be badly sorted relative to neighboring
-        #submaps
-        self.blit_static_objects_border(t)
+        #submaps. Remember that submaps are not initialized at the same time.
+##        self.blit_static_objects_border(t)
+        print(self.lm.chunk, len(self.border_objects))
+        true_frames = [True for i in range(self.lm.nframes)]
+        self.border_objects = [o for o in self.border_objects if o.blit_on_gm != true_frames]
+        for o in self.border_objects:
+            if self.is_on_screen(o, s):
+                self.blit_intelligent(o, t, s)
+        mo.append("d")
+        if mo.get_n_iterations("a")%100 == 0:
+            mo.show(rnd=2)
+
         if draw_ui:
             self.ui_manager.draw_after_objects(s)
+
+    def is_on_screen(self, o, s):
+        r,i = o.get_rect_and_img(s)
+        return r.colliderect(self.me.screen_rect)
+
+    def is_on_border(self, o):
+        x,y = o.cell.coord
+        gm = self.lm.current_gm
+        smscx, smscy = gm.submap_size_cells
+        modx = x%smscx
+        if modx == 0 or modx == smscx-1:
+            return True
+        mody = y%smscy
+        if mody == 0 or mody == smscy-1:
+            return True
+        return False
 
 
     def blit_static_object(self, o, t):
         if not o.blit_on_gm[t]:
-            done = self.lm.current_gm.blit_object_at_frame(o, t)
-            if done:
-                o.blit_on_gm[t] = True
+            o.blit_on_gm[t]  = self.lm.current_gm.blit_object_at_frame(o, t)
+##            done = self.lm.current_gm.blit_object_at_frame(o, t)
+##            if done:
+##                o.blit_on_gm[t] = True
 ##                rect, img = o.get_fakerect_and_img(s)
 ##                screen.blit(img, rect)
 
-    def blit_static_object_border(self, o, t, s):
+    def blit_intelligent(self, o, t, s):
         """This function should be called only if o is on the border of a
         submap."""
+##        print(o.cell.coord, t, o.cell.get_chunk())
         if o.blit_on_gm_border[t]:
             return
         dx = (-1,0,1)
         dy = (-1,0,1)
         x0,y0 = o.cell.coord
         neighbors = []
+        has_unbuilt_neigh = False
         #now collect the neighbors to sort and redraw on o.cell
         for x in dx:
             xc = x0 + x
-            if 0 <= xc < self.lm.nx:
-                for y in dy:
-                    yc = y0 + y
-                    if 0 <= yc < self.lm.ny:
-                        coord = (xc, yc)
-                        cell = self.lm[coord]
-                        obj_neighs = cell.objects
-                        if obj_neighs:
-                            obj_neigh = obj_neighs[0]
-                            r,img = obj_neigh.get_fakerect_and_img(s)
-                            neighbors.append((r,obj_neigh))
-        neighbors.sort(key=lambda x:(x[0][3],x[0][2])) #bottom, right
+            for y in dy:
+                yc = y0 + y
+                coord = (xc, yc)
+                if not(0 <= yc < self.lm.ny) or not(0 <= xc < self.lm.nx): #me.get_cell_at(coord, o.cell.get_chunk())
+                    has_unbuilt_neigh = True
+                    continue
+                cell = self.lm[coord]
+                obj_neighs = cell.objects
+                if obj_neighs:
+                    obj_neigh = obj_neighs[0]
+                    r,img = obj_neigh.get_fakerect_and_img(s)
+                    neighbors.append((r,obj_neigh))
+        #now sort the neighbors and reblit them
+        #sorting order : (is_ground, bottom_coord, right_coord)
+        neighbors.sort(key=lambda x:(not(x[1].is_ground),x[0][3],x[0][2])) #bottom, right
         gm = self.lm.current_gm
+        finished = True
         for r,obj in neighbors: #include o itslef
             for x in dx:
                 for y in dy:
                     coord = (x0+x, y0+y)
-                    done = self.lm.current_gm.blit_object_at_frame_on_coord(obj, t, coord)
-                    obj.blit_on_gm_border[t] = done
+                    #done is False if submap of obj has not been built
+                    done = gm.blit_object_at_frame_on_coord(obj, t, coord)
+                    if not done:
+                        finished = False
+        if not has_unbuilt_neigh:
+            o.blit_on_gm_border[t] = finished
+##        o.blit_on_gm_border[t] = True
 
-    def blit_static_objects_border(self, t):
-        s = self.lm.get_current_cell_size()
-        gm = self.lm.current_gm
-        xcell = -1
-        for submap_x in range(gm.n_submaps[0]-1): #ignore border with other global maps !
-            xcell += gm.submap_size_cells[0]
-            for ycell in range(gm.ny):
-                objs = self.lm[xcell,ycell].objects
-                if objs:
-                    self.blit_static_object_border(objs[0], t, s)
-                #
-                objs = self.lm[xcell+1,ycell].objects
-                if objs:
-                    self.blit_static_object_border(objs[0], t, s)
-        ycell = -1
-        for submap_y in range(gm.n_submaps[1]-1): #ignore border with other global maps !
-            ycell += gm.submap_size_cells[1]
-            for xcell in range(gm.submap_size_cells[0]):
-                objs = self.lm[xcell,ycell].objects
-                if objs:
-                    self.blit_static_object_border(objs[0], t, s)
-                #
-                objs = self.lm[xcell,ycell+1].objects
-                if objs:
-                    self.blit_static_object_border(objs[0], t, s)
+##    def blit_static_objects_border(self, t):
+##        s = self.lm.get_current_cell_size()
+##        gm = self.lm.current_gm
+##        xcell = -1
+##        for submap_x in range(gm.n_submaps[0]-1): #ignore border with other global maps !
+##            xcell += gm.submap_size_cells[0]
+##            for ycell in range(gm.ny):
+##                objs = self.lm[xcell,ycell].objects
+##                if objs:
+##                    self.blit_intelligent(objs[0], t, s)
+##                #
+##                objs = self.lm[xcell+1,ycell].objects
+##                if objs:
+##                    self.blit_intelligent(objs[0], t, s)
+##        ycell = -1
+##        for submap_y in range(gm.n_submaps[1]-1): #ignore border with other global maps !
+##            ycell += gm.submap_size_cells[1]
+##            for xcell in range(gm.nx):
+##                objs = self.lm[xcell,ycell].objects
+##                if objs:
+##                    self.blit_intelligent(objs[0], t, s)
+##                #
+##                objs = self.lm[xcell,ycell+1].objects
+##                if objs:
+##                    self.blit_intelligent(objs[0], t, s)
 
 
 ##    def blit_static_object(self, screen, o, t, s):
