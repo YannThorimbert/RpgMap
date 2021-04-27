@@ -67,8 +67,8 @@ class Game:
         for s in self.smokes_log.values():
             s.refresh_pos()
 
-    def set_fire(self, coord, before=None):
-        cell = self.get_cell_at(coord[0],coord[1])
+    def set_fire(self, chunk, coord, before=None):
+        cell = self.get_cell_at(chunk, coord)
         if before is None:
             before = ("village","forest")
         self.add_obj_before_other_if_needed(self.fire,1,before,cell)
@@ -133,8 +133,11 @@ class Game:
             o.randomize_relpos()
         return o
 
-    def get_cell_at(self, x, y):
-        return self.me.lm.get_cell_at(x,y)
+    def get_cell_at(self, chunk, coord):
+        neigh = self.me.neigh_maps.get(chunk,None)
+        if neigh:
+            return self.me.neigh_maps[chunk].lm.get_cell_at(coord[0],coord[1])
+        return None
 
     def add_obj_before_other_if_needed(self, obj, qty, other_names, cell):
         has_other = False
@@ -158,18 +161,6 @@ class Game:
         o = self.add_object(cell.coord, obj, qty, has_other)
         return o
 
-    def get_interactive_objects(self, x, y):
-        return [o for o in self.get_cell_at(x,y).objects if o.can_interact]
-
-    def get_all_objects_by_name(self, name):
-        objs = []
-        for x in range(self.me.lm.nx):
-            for y in range(self.me.lm.ny):
-                cell = self.get_cell_at(x,y)
-                for o in cell.objects: #ok
-                    if o.name == name:
-                        objs.append(o)
-        return objs
 
     def get_all_objects_by_str_type(self, str_type):
         d = self.me.objects_dict.get(str_type)
@@ -188,26 +179,26 @@ class Game:
     def get_object(self, str_type, coord):
         return self.me.get_object(str_type, coord)
 
-    def check_integrity(self):
-        o1 = self.me.lm.static_objects + self.me.dynamic_objects
-        o2 = []
-        for x in range(self.get_map_size()[0]):
-            for y in range(self.get_map_size()[1]):
-                o2 += self.get_cell_at(x,y).objects
-        for o in o1:
-            o.game = self
-            assert o in o2
-        for o in o2:
-            assert o in o1
-        #o1 contains the same objects as o2
-        od = []
-        for entry in self.me.objects_dict.keys():
-            for o in self.me.objects_dict[entry].values():
-                od.append(o)
-##                if not (o in o1):
-##                    print(o, o.name, o.str_type, o.cell.coord)
-##                    assert o in o1
+##    def check_integrity(self):
+##        o1 = self.me.lm.static_objects + self.me.dynamic_objects
+##        o2 = []
+##        for x in range(self.get_map_size()[0]):
+##            for y in range(self.get_map_size()[1]):
+##                o2 += self.get_cell_at(x,y).objects
 ##        for o in o1:
-##            print(o, o.name, o.str_type, o.cell.coord)
-##            assert o in od
-        print("The", len(o1), "objects are consistent in memory.")
+##            o.game = self
+##            assert o in o2
+##        for o in o2:
+##            assert o in o1
+##        #o1 contains the same objects as o2
+##        od = []
+##        for entry in self.me.objects_dict.keys():
+##            for o in self.me.objects_dict[entry].values():
+##                od.append(o)
+####                if not (o in o1):
+####                    print(o, o.name, o.str_type, o.cell.coord)
+####                    assert o in o1
+####        for o in o1:
+####            print(o, o.name, o.str_type, o.cell.coord)
+####            assert o in od
+##        print("The", len(o1), "objects are consistent in memory.")

@@ -44,7 +44,7 @@ class MapEditor:
         self.menu_width = 200
         self.zoom_cell_sizes = None
         self.chunk_size = None
-        self.chunk = None
+        self.seed = None
         self.nframes = 16 #number of different tiles for one material (used for moving water)
         self.max_wanted_minimap_size = 128 #in pixels.
         self.show_grid_lines = False
@@ -137,8 +137,8 @@ class MapEditor:
         self.lm.static_objects.append(o)
         self.add_to_objects_dict(o)
 
-    def remove_static_object(self, o):
-        self.lm.static_objects.remove(o)
+    def remove_static_object(self, lm, o):
+        lm.static_objects.remove(o)
         self.objects_dict[o.str_type].pop(o.cell.coord)
 
     def remove_dynamic_object(self, o):
@@ -358,7 +358,7 @@ class MapEditor:
         self.img_cursor = self.cursors[self.cursor_color][self.idx_cursor]
         self.cursor_slowness = int(0.3*self.fps)
 
-    def build_cell_graphics(self, cellbase): #blit_objects doit blitter que sur la cellule qui a change !!!!
+    def build_cell_graphics(self, cellbase, lm): #blit_objects doit blitter que sur la cellule qui a change !!!!
         xc,yc = cellbase.coord
         static_objects_ground = {}
         static_objects_not_ground = {}
@@ -722,7 +722,7 @@ class MapEditor:
         if 2**power < M:
             power += 1
         S = int(2**power)
-        hmap = ng.generate_terrain(S, self.n_octaves, self.chunk, self.persistance)
+        hmap = ng.generate_terrain(S, self.n_octaves, self.seed, self.persistance)
         hmax = 3.5
         hmin = 0.5
         for x in range(self.chunk_size[0]):

@@ -265,14 +265,6 @@ class LogicalMap(BaseGrid):
         for gm in self.graphical_maps:
             gm.blit_material_of_cell(cell)
 
-    def build_surfaces_fast(self):
-        """Not that fast..."""
-        ref = self.graphical_maps[0]
-        ref.generate_submaps_parameters(factor=SUBMAP_FACTOR)
-        ref.build_surfaces(self.colorkey)
-        if len(self.graphical_maps) > 1:
-            for gm in self.graphical_maps[1:]:
-                gm.build_surfaces_from(self.colorkey, ref)
 
 ##    def blit_objects(self, objects=None, sort=True): #this is permanent
 ##        if objects is None:
@@ -427,29 +419,6 @@ class GraphicalMap(PygameGrid):
             img = self[(x,y)].imgs[t]
             self.surfaces[surfx][surfy][t].blit(img, (xpix,ypix))
 
-
-    def build_surfaces_from(self, colorkey, gm):
-        factor = self.cell_size / gm.cell_size
-        #we assume that ratio does not change bewteen submaps sizes of different zoom levels!
-        scaled_size = (int(factor * gm.submap_size[0]),
-                        int(factor * gm.submap_size[1]))
-        #create table of surfaces
-        surfaces = [[[None for frame in range(gm.nframes)]
-                        for y in range(gm.n_submaps[1])]
-                          for x in range(gm.n_submaps[0])]
-        #fill table of surfaces
-        for x in range(gm.n_submaps[0]):
-            for y in range(gm.n_submaps[1]):
-                for frame in range(gm.nframes):
-                    resized = gm.surfaces[x][y][frame]
-                    resized = pygame.transform.scale(resized, scaled_size)
-                    surfaces[x][y][frame] = resized
-        self.surfaces = surfaces
-        self.submap_size_pix = scaled_size
-        self.n_submaps = gm.n_submaps
-        self.nframes = gm.nframes
-
-
     def blit_object_all_frames(self, obj):
         """blit images <obj_img> on self's surface"""
         print("**********boaf***********")
@@ -457,7 +426,11 @@ class GraphicalMap(PygameGrid):
             self.blit_object_at_frame(obj, t)
 
     def blit_object_at_frame(self, obj, t):
-        """blit images <obj_img> on self's surface"""
+        """Blit images <obj_img> on self's surface.
+        This function is sequentially called on a list of objs that have been
+        prealably sorted, and occupying the core region of a submap (i.e. the
+        objects of the borders are not expected to be correctly blitted using
+        this function."""
         delta = obj.relpos
         reldx, reldy = int(delta[0]*self.cell_size), int(delta[1]*self.cell_size)
         xobj, yobj = obj.cell.coord
@@ -494,7 +467,7 @@ class GraphicalMap(PygameGrid):
 
 
     def blit_object_at_frame_on_coord(self, obj, t, coord):
-        """blit image of <obj> on cell <coord>"""
+        """Blit the part of image of <obj> on cell with coordinate <coord>."""
         delta = obj.relpos
         reldx, reldy = int(delta[0]*self.cell_size), int(delta[1]*self.cell_size)
         xobj, yobj = obj.cell.coord
@@ -514,7 +487,7 @@ class GraphicalMap(PygameGrid):
         #
         s = self.surfaces[cell_surfx][cell_surfy][t]
         if s:
-            cell_rect = pygame.Rect(cell_xpix,cell_ypix,self.cell_size,self.cell_size)
+            cell_rect = pygame.Rect(cell_xpix,cell_ypix,self.cell_size,self.cell_size) #xxx
 ##            pygame.draw.rect(s, (0,0,0), cell_rect, 2)
             obj_xpix -= (cell_surfx-obj_surfx)*self.submap_size_pix[0]
             obj_ypix -= (cell_surfy-obj_surfy)*self.submap_size_pix[1]
@@ -690,8 +663,8 @@ class GraphicalMap(PygameGrid):
     def extract_static_img(self, coord, frame, img):
         """blit on <img> self's graphics present at <coord>"""
         cs = self.cell_size
-        nx = int(200/cs) #why 200 ?
-        ny = int(200/cs)
+        nx = int(const.SUBMAP_FACTOR/cs) #why 200 ?
+        ny = int(const.SUBMAP_FACTOR/cs)
         size_x = nx*cs
         size_y = ny*cs
         surfx = coord[0]*cs//size_x

@@ -187,7 +187,8 @@ class MapObject:
         if self is self.cell.unit:
             self.cell.unit = None
 
-    def remove_from_map(self, me):
+    def remove_from_map(self):
+        me = self.lm.me
         self.remove_from_cell_objects()
         is_bridge = "bridge_" in self.str_type
         if is_bridge and not(self in me.dynamic_objects):
@@ -195,7 +196,7 @@ class MapObject:
         if self.is_static:# or self.name=="bridge":
             print("Removing static object...")
             if self in me.lm.static_objects:
-                me.remove_static_object(self)
+                me.remove_static_object(self.lm, self)
             me.build_cell_graphics(self.cell)
         elif is_bridge:
             me.dynamic_objects.remove(self)

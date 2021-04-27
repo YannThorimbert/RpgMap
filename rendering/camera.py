@@ -170,7 +170,8 @@ class Camera:
                                 drawn_last.add(so)
                             else:
                                 so_rect, so_img = so.get_fakerect_and_img(s)
-                                to_sort.add((so_rect[3],so))
+                                sorting_arg = (so_rect[3],so_rect[2])
+                                to_sort.add((sorting_arg,so))
 
     #How it works:
     #   We collect all the objects to be drawn, plus the static objects around them.
@@ -243,7 +244,8 @@ class Camera:
                         self.so_first.append(o)
                     else:
                         rect, img = o.get_fakerect_and_img(s)
-                        to_sort.add((rect[3],o))
+                        sorting_arg = (rect[3],rect[2])
+                        to_sort.add((sorting_arg,o))
                 self.log_static_objects_around(o, to_sort, self.so_last)
             self.need_to_recompute_static_objs = False
             self.so_second = list(to_sort)
@@ -262,15 +264,9 @@ class Camera:
         mo.append("c")
         #handle border objects that may be badly sorted relative to neighboring
         #submaps. Remember that submaps are not initialized at the same time.
-##        self.blit_static_objects_border(t)
-##        print(self.lm.chunk, len(self.border_objects))
-        true_frames = [True for i in range(self.lm.nframes)]
-        self.border_objects = [o for o in self.border_objects if o.blit_on_gm != true_frames]
-        for o in self.border_objects:
-            if self.is_on_screen(o, s):
-                self.blit_intelligent(o, t, s)
+        self.blit_static_objects_border(t, s)
         mo.append("d")
-        if mo.get_n_iterations("a")%100 == 0:
+        if mo.get_n_iterations("a")%1000 == 0:
             mo.show(rnd=2)
 
         if draw_ui:
@@ -294,8 +290,9 @@ class Camera:
 
 
     def blit_static_object(self, o, t):
-        if not o.blit_on_gm[t]:
-            o.blit_on_gm[t]  = self.lm.current_gm.blit_object_at_frame(o, t)
+        self.lm.current_gm.blit_object_at_frame(o, t)
+##        if not o.blit_on_gm[t]:
+##            o.blit_on_gm[t]  = self.lm.current_gm.blit_object_at_frame(o, t)
 ##            done = self.lm.current_gm.blit_object_at_frame(o, t)
 ##            if done:
 ##                o.blit_on_gm[t] = True
@@ -323,9 +320,7 @@ class Camera:
                     has_unbuilt_neigh = True
                     continue
                 cell = self.lm[coord]
-                obj_neighs = cell.objects
-                if obj_neighs:
-                    obj_neigh = obj_neighs[0]
+                for obj_neigh in cell.objects:
                     r,img = obj_neigh.get_fakerect_and_img(s)
                     neighbors.append((r,obj_neigh))
         #now sort the neighbors and reblit them
@@ -370,6 +365,13 @@ class Camera:
 ##                objs = self.lm[xcell,ycell+1].objects
 ##                if objs:
 ##                    self.blit_intelligent(objs[0], t, s)
+
+    def blit_static_objects_border(self, t, s):
+        true_frames = [True for i in range(self.lm.nframes)]
+        self.border_objects = [o for o in self.border_objects if o.blit_on_gm != true_frames]
+        for o in self.border_objects:
+            if self.is_on_screen(o, s):
+                self.blit_intelligent(o, t, s)
 
 
 ##    def blit_static_object(self, screen, o, t, s):

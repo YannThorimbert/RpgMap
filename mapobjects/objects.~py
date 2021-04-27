@@ -187,7 +187,8 @@ class MapObject:
         if self is self.cell.unit:
             self.cell.unit = None
 
-    def remove_from_map(self, me):
+    def remove_from_map(self):
+        me = self.lm.me
         self.remove_from_cell_objects()
         is_bridge = "bridge_" in self.str_type
         if is_bridge and not(self in me.dynamic_objects):
@@ -384,6 +385,12 @@ class MapObject:
         return (ir.x, ir.y, ir.right, ir.bottom), img
 
     def get_rect_and_img(self, cell_size):
+        img = self.get_current_img()
+        r = self.lm.cam.get_rect_at_coord(self.cell.coord)
+        ir = img.get_rect()
+        ir.center = r.center
+        ir.move_ip(self.relpos[0]*cell_size, self.relpos[1]*cell_size)
+        return ir, img
 
 
     def get_current_cell_rect_center(self, cell_size):

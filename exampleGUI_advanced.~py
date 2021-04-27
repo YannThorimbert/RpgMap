@@ -91,8 +91,10 @@ app.quit()
 
 #mais trop lent quand meme !
 
+#lm.static_objects est vide
+
 #faire un tag par submap ?
-#cam ne touche pas à mapgrid tant que lm.t n'a pas changé!
+#cam ne touche pas à mapgrid tant que lm.t n'a pas changé! ==> cam.last_t
 
 ##PK CLIGNOTE ? : seulement aux frontieres. clignote parce que chevauche des fois pas.
 #mystère des rivières

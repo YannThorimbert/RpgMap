@@ -16,7 +16,7 @@ from RpgMap.mapobjects.objects import MapObject
 def generate_map():
     mi = MapInitializer("First demo map")
 ##    mi.chunk = (random.randint(0,1000), random.randint(0,1000))
-    mi.chunk = (1310,15)
+    mi.seed = (1310,15)
     mi.chunk_size = (32,32) #size of a chunk
 ##    mi.set_terrain_type(terrain_plains, colorscale_normal)
     #dont forget to adapt terrain and colorscale to the actual map generated.
@@ -90,6 +90,8 @@ app.quit()
 #parce qu'ils ont été mis a True lorsque la surface etait pas construite
 
 #mais trop lent quand meme !
+
+#lm.static_objects est vide
 
 #faire un tag par submap ?
 #cam ne touche pas à mapgrid tant que lm.t n'a pas changé! ==> cam.last_t

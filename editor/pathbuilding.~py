@@ -144,11 +144,7 @@ def add_river_greedy(me, lm, material_dict, imgs, rounded_river,
         objs[delta] = river_obj
     #5) add river cells to map and layer
     for i,cell in enumerate(actual_path):
-        for o in cell.objects:
-            if o.name != "river":
-                lm.static_objects.remove(o)
-                cell.objects.remove(o)
-        #
+        prepare_cell_for_river(lm, cell)
         dx,dy,corner = get_path_orientation(i, cell, actual_path)
         if rounded_river:
             c = objs.get((dx,dy,corner))
@@ -158,7 +154,6 @@ def add_river_greedy(me, lm, material_dict, imgs, rounded_river,
             raise Exception("No river object for delta", dx, dy, corner)
         assert cell.name != "river"
         c = c.add_copy_on_cell(cell)
-        c.lm = lm
         cell.name = "river"
         lm.static_objects.append(c)
 
@@ -167,19 +162,40 @@ def add_river_greedy(me, lm, material_dict, imgs, rounded_river,
         if not("water" in actual_path[-1].material.name.lower()):
             for neigh in actual_path[-1].get_neighbors_moore():
                 if neigh and neigh.name != "river":
-                    for o in neigh.objects:
-                        if o.name != "river":
-                            lm.static_objects.remove(o)
-                            neigh.objects.remove(o)
+                    prepare_cell_for_river(lm, neigh)
                     river_obj = MapObject(me, imgs[(0,0,None)][0], "river", 1.)
                     river_obj.is_ground = True
-                    river_obj = river_obj.add_copy_on_cell(neigh)
                     river_obj.lm = lm
+                    river_obj = river_obj.add_copy_on_cell(neigh)
                     neigh.name = "river"
                     lm.static_objects.append(river_obj)
     return objs
 
 
+def prepare_cell_for_river(lm, cell):
+    for o in cell.objects:
+        if o.name != "river":
+            lm.static_objects.remove(o)
+            cell.objects.remove(o)
+
+    above = lm.me.game.get_cell_at(lm.chunk, (cell.coord[0],cell.coord[1]-1))
+    if not above: #maybe this is the first initialization (chunk (0,0))
+        if cell.coord[1]-1 >= 0:
+        above = lm.get_cell_at(cell.coord[0],cell.coord[1]-1)
+    if above:
+        for o in above.objects:
+            if not o.is_ground:
+                above.lm.static_objects.remove(o)
+                above.objects.remove(o)
+
+
+##            rect, img = o.get_rect_and_img()
+##            ybefore = rect.y
+##            rect.bottom = lm.current_gm.get_rect_at_cell(o.cell.coord).bottom
+##            relpos = (rect.y - ybefore) / lm.get_current_cell_size()
+##            o.min_relpos = [0,relpos]
+##            o.max_relpos = [0,relpos]
+##            o.randomize_relpos()
 
 def get_path_orientation(i, cell, path):
     dx, dy = 0, 0

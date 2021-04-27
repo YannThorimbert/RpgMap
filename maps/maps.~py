@@ -14,8 +14,8 @@ map0.world_size = (16,16)
 ##map0.set_terrain_type(terrain_flat, colorscale_flat)
 ##map0.set_terrain_type(terrain_plains, colorscale_plains)
 map0.set_terrain_type(terrain_small, colorscale_normal)
-map0.max_number_of_rivers = 1
-map0.max_number_of_roads = 1
+map0.max_number_of_rivers = 0
+map0.max_number_of_roads = 0
 ##map0.h(12,12,"sand")
 ##for x in range(10):
 ##    for y in range(10):

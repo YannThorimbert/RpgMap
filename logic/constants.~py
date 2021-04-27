@@ -4,7 +4,8 @@ SLOW = 3
 MIDSLOW = 4
 
 MOUSE_NAV_FACTOR = 10. #speed of cam move when holding shift
-SUBMAP_FACTOR = 200
+SUBMAP_FACTOR = 400 #
+
 
 
 FN_TERRAIN = "sprites/terrain/"

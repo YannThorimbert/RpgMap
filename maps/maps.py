@@ -9,7 +9,7 @@ from PyWorld2D.thornoise.purepython.noisegen import colorscale_plains, colorscal
 
 # ##############################################################################
 map0 = MapInitializer("Map0")
-map0.chunk = (1400,0)
+map0.seed = (1400,0)
 map0.world_size = (16,16)
 ##map0.set_terrain_type(terrain_flat, colorscale_flat)
 ##map0.set_terrain_type(terrain_plains, colorscale_plains)
@@ -23,7 +23,7 @@ map0.max_number_of_roads = 0
 
 # ##############################################################################
 map1 = MapInitializer("First demo map")
-map1.chunk = (0,0)
+map1.seed = (0,0)
 map1.reverse_hmap = True
 map1.world_size = (32,32)
 map1.set_terrain_type(terrain_plains, colorscale_plains)
@@ -49,12 +49,12 @@ map2 = MapInitializer("Second demo map")
 map2.world_size = (64, 32) #with big maps it is better to use lower persistance
 map2.persistance = 1.3 #The higher, the bigger are the "continents"
 map2.palm_homogeneity = 0.9
-map2.chunk = (12345,0)
+map2.seed = (12345,0)
 
 
 # ##############################################################################
 map3 = MapInitializer("Third demo map")
-map3.chunk = (6666,6666)
+map3.seed = (6666,6666)
 map3.world_size = (64, 64)
 map3.persistance = 1.5
 #Note : it is better to start the cells sizes with a power of 2. Then it doesn't matter.
@@ -73,12 +73,12 @@ map1.set_terrain_type(terrain_plains, colorscale_plains)
 ##map2.world_size = (256, 128) #with big maps it is better to use lower persistance
 ##map2.persistance = 1.3 #The higher, the bigger are the "continents"
 ##map2.palm_homogeneity = 0.9
-##map2.chunk = (12345,0)
+##map2.seed = (12345,0)
 ##
 ##
 ### ##############################################################################
 ##map3 = MapInitializer("Third demo map")
-##map3.chunk = (6666,6666)
+##map3.seed = (6666,6666)
 ##map3.world_size = (128,128)
 ##map3.persistance = 1.5
 ###Note : it is better to start the cells sizes with a power of 2. Then it doesn't matter.

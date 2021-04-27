@@ -64,7 +64,7 @@ class MapInitializer:
         self.name = name #name of the map
         ############ terrain generation:
         self.chunk_size = (128,128) #in number of cells. Put a power of 2 for tilable maps
-        self.chunk = (1310,14) #Kind of seed. Neighboring chunk give tilable maps.
+        self.seed = (1310,14) #Kind of seed. Neighboring chunk give tilable maps.
         self.persistance = 2. #parameter of the random terrain generation.
         self.n_octaves = "max" #parameter of the random terrain generation.
         self.reverse_hmap = False #set to True to reverse height map
@@ -115,9 +115,6 @@ class MapInitializer:
 ##        self.static_objects_n_octaves = 4
         self.static_objects_n_octaves = 4
         self.static_objects_persistance = 1.7
-
-
-
         # self.cobble_fn = FN_STRUCTURES + "cobblestone2.png"
         self.cobble_fn = FN_TERRAIN + "dirt1.jpg"
         self.cobble_fn_size = 1.
@@ -136,7 +133,7 @@ class MapInitializer:
         self.user_objects = []
         self._objects = {}
         self.heights = []
-        self.seed_static_objects = self.chunk
+        self.seed_static_objects = self.seed
         self.rivers = None
         self.cobble_fnstone = None
         self.bridge_h_mapobject= None
@@ -170,8 +167,7 @@ class MapInitializer:
         me.fps = self.fps
         me.menu_width = self.menu_width
         me.chunk_size = self.chunk_size
-        me.chunk = self.chunk
-##        me.current_chunk = self.chunk
+        me.seed = self.seed
         me.persistance = self.persistance
         me.n_octaves = self.n_octaves
         me.reverse_hmap = self.reverse_hmap
@@ -237,12 +233,12 @@ class MapInitializer:
         self.user_objects.append((obj_name, (x,y), flip))
 
 
-    def add_static_objects(self, me, chunk_static):
+    def add_static_objects(self, me, seed_static):
         #1) We use another hmap to decide where we want trees (or any other object)
         S = len(me.hmap)
         m = ng.generate_terrain(S, n_octaves=self.static_objects_n_octaves,
                                 persistance=self.static_objects_persistance,
-                                chunk=chunk_static)
+                                chunk=seed_static)
         ng.normalize(m)
         self.smap = m
 
@@ -316,7 +312,6 @@ class MapInitializer:
         n_rivers = 0
         lm = me.lm
         self.imgs_river = self.build_imgs_river(me)
-
         material_dict = get_materials_dict(lm)
         self.update_loading_bar("Finding paths for rivers and roads...",0.6)
         for i in range(self.max_number_of_rivers):
@@ -347,13 +342,13 @@ class MapInitializer:
 ##                                    max_length=self.max_road_length)
 
 
-    def add_static_objects_neigh(self, me, lm, chunk_static):
+    def add_static_objects_neigh(self, me, lm, seed_static):
         #1) We use another hmap to decide where we want trees (or any other object)
         me = lm.me
         S = len(me.hmap)
         m = ng.generate_terrain(S, n_octaves=self.static_objects_n_octaves,
                                 persistance=self.static_objects_persistance,
-                                chunk=chunk_static)
+                                chunk=seed_static)
         ng.normalize(m)
         self.smap = m
         #4) add the objects via distributors, to add them randomly in a nice way
@@ -439,7 +434,7 @@ class MapInitializer:
         #monitoring
         tot_time = f-a
         steps = [b-a,c-b,d-c,e-d,f-e]
-        print("Neigh built:",end=" ")
+        print("Neigh built: ",end="")
         for s in steps:
             print(round(100.*s/tot_time),"% ", end="")
         print()
@@ -477,7 +472,7 @@ class MapInitializer:
         self.update_loading_bar("Building map surfaces...",0.3)
         build_lm(me)
         self.update_loading_bar("Adding static objects...",0.4)
-        self.add_static_objects(me, (me.chunk[0]+1,me.chunk[1]+1))
+        self.add_static_objects(me, (me.seed[0]+1,me.seed[1]+1))
         self.add_user_objects(me)
         #Now that we finished to add objects, we generate the pygame surface
         self.update_loading_bar("Building surfaces", 0.8)
