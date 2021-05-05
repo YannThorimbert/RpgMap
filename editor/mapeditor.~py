@@ -44,7 +44,7 @@ class MapEditor:
         self.menu_width = 200
         self.zoom_cell_sizes = None
         self.chunk_size = None
-        self.chunk = None
+        self.seed = None
         self.nframes = 16 #number of different tiles for one material (used for moving water)
         self.max_wanted_minimap_size = 128 #in pixels.
         self.show_grid_lines = False
@@ -121,10 +121,61 @@ class MapEditor:
             xc,yc = self.cam.get_coord_at_pix(corner)
             delta = xc//self.cam.nx, yc//self.cam.ny
             if not (delta in self.neigh_maps):
-                if delta == (0,0):
-                    print("Building self neigh")
                 self.neigh_maps[delta] = NeighMap(self, delta)
 ##        print(len(self.neigh_maps))
+
+##    def build_objects_list(self):
+##        s = self.lm.get_current_cell_size()
+####        import bisect
+##        self.objects_tuples = []
+##        for nm in self.neigh_maps.values():
+##            for o in nm.lm.static_objects:
+##                r,i = o.get_rect_and_img(s)
+##                ntuple = (not(o.is_ground), r.bottom, r.right, r, o)
+##                self.objects_tuples.append(ntuple)
+####                bisect.insort(self.objects_tuples, ntuple)
+##        self.objects_tuples.sort(key=lambda x:x[0:4])
+##        print("Objects rebuilt")
+
+##    def build_objects_to_display(self):
+##        s = self.lm.get_current_cell_size()
+##        import bisect
+##        self.objects_tuples = []
+##        for nm in self.neigh_maps.values():
+##            for o in nm.lm.static_objects:
+##                r,i = o.get_rect_and_img(s)
+##                if r.colliderect(self.screen_rect):
+##                    ntuple = (not(o.is_ground), r.bottom, r.right, r, o)
+####                    self.objects_tuples.append(ntuple)
+##                    bisect.insort(self.objects_tuples, ntuple) #xx
+##        self.objects_tuples.sort(key=lambda x:x[0:4])
+
+    def build_objects_to_display(self):
+        s = self.lm.get_current_cell_size()
+        import bisect
+        self.objects_tuples = []
+        for nm in self.neigh_maps.values():
+            for o in nm.lm.static_objects:
+                r,i = o.get_rect_and_img(s)
+                if r.colliderect(self.screen_rect):
+                    ntuple = (not(o.is_ground), r.bottom, r.right, r, o)
+##                    self.objects_tuples.append(ntuple)
+                    bisect.insort(self.objects_tuples, ntuple) #xx
+        self.objects_tuples.sort(key=lambda x:x[0:4])
+
+
+    def draw_objects(self):
+        if self.delta_cam or self.game.t==0:
+            self.build_objects_to_display()
+##        for ntuple in self.objects_tuples:
+##            r = ntuple[3]
+##            img = ntuple[-1].get_current_img()
+##            self.screen.blit(img, r)
+        #no impact on performance:
+        blits = [(t[-1].get_current_img(),t[3]) for t in self.objects_tuples]
+        self.screen.blits(blits)
+
+##        pygame.image.save(self.screen, "shot"+str(self.game.t).zfill(8)+".png")
 
 
     def add_to_objects_dict(self, o):
@@ -467,7 +518,7 @@ class MapEditor:
         #blit cursor
 ##        self.cam.draw_rmouse(self.screen, self.box_hmap.get_rect())
         #blit dynamic objects
-        neigh_map.cam.draw_objects(self.screen, self.dynamic_objects, draw_ui=False)
+##        neigh_map.cam.draw_objects(self.screen, self.dynamic_objects, draw_ui=False)
         #blit smoke effects
 ##        self.game.refresh_smokes()
         #update right pane
@@ -503,10 +554,7 @@ class MapEditor:
         pygame.draw.rect(self.screen, (255,0,0), rect, 3)
         mo.append("d")
         #
-        #blit cursor
-##        self.cam.draw_rmouse(self.screen, self.box_hmap.get_rect())
-        #blit objects
-        self.cam.draw_objects(self.screen, self.dynamic_objects, True)
+        self.draw_objects()
         mo.append("e")
         #blit smoke effects
         self.game.refresh_smokes()
@@ -519,9 +567,9 @@ class MapEditor:
 ##        self.cam.draw_rmouse(self.screen, self.box_hmap.get_rect())
 ##        pygame.draw.rect(self.screen, (255,255,255), self.cam.rmouse, 1)
         mo.append("f")
-##        if self.game.t%100 == 0:
-##            mo.show(rnd=2)
-##            print()
+        if self.game.t%100 == 0:
+            mo.show(rnd=2)
+            print()
 
 
 
@@ -531,7 +579,7 @@ class MapEditor:
         #blit map
         self.cam.draw_map(self.screen, self.show_grid_lines)
         #blit objects
-        self.cam.draw_objects(self.screen, self.dynamic_objects, True)
+        self.cam.draw_objects(self.screen, self.objects_tuples, True)
         #blit smoke effects
         self.game.refresh_smokes()
         #blit right pane and draw rect on minimap

@@ -418,22 +418,21 @@ class MapInitializer:
     def build_neigh(self, me, chunk):
         import time
         a = time.time()
-        hmap = me.build_hmap_neigh(chunk) #3%
+        hmap = me.build_hmap_neigh(chunk) #up to 16%
         b = time.time()
-        lm = build_lm_neigh(me, hmap) #22%
+        lm = build_lm_neigh(me, hmap) #takes 20-60% of the time
         c = time.time()
-        self.add_static_objects_neigh(me, lm, (chunk[0]+1,chunk[1]+1)) #18%
+        self.add_static_objects_neigh(me, lm, (chunk[0]+1,chunk[1]+1)) #20%-60%
         d = time.time()
 ##        self.add_user_objects(me) #pas encore fait
-        lm.build_surfaces() #0%
+        lm.build_surfaces() #
         e = time.time()
-        sort_objects = True
-        lm.blit_objects(sort=sort_objects) #64% blit objs on graphical maps
-##        lm.blit_objects_smart() #64%
-        f = time.time()
+##        sort_objects = True
+##        lm.blit_objects(sort=sort_objects) #
+##        lm.blit_objects_smart()
         #monitoring
-        tot_time = f-a
-        steps = [b-a,c-b,d-c,e-d,f-e]
+        tot_time = e-a
+        steps = [b-a,c-b,d-c,e-d]
         print("Neigh built: ",end="")
         for s in steps:
             print(round(100.*s/tot_time),"% ", end="")

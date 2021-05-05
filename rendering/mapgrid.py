@@ -621,7 +621,7 @@ class GraphicalMap(PygameGrid):
                             self.build_surface(x,y,t)
                             screen.blit(self.surfaces[x][y][t], point)
                         #draw submap border:
-                        pygame.draw.rect(screen, (0,0,255), pygame.Rect(posx,posy,self.submap_size_pix[0],self.submap_size_pix[1]),1)
+##                        pygame.draw.rect(screen, (0,0,255), pygame.Rect(posx,posy,self.submap_size_pix[0],self.submap_size_pix[1]),1)
         #now blit static objects
 ##        for x in range(self.n_submaps[0]):
 ##            x_loc_i = x * self.submap_size_cells[0]

@@ -16,7 +16,7 @@ forest.add("tree6.png", 1.5)
 forest.add("tree7.png", 1.5)
 
 forest_grass = DistributionDescriptor("forest", ["Grass"])
-forest_grass.homogeneity = 0.8
+forest_grass.homogeneity = 0.6
 forest.zones_spread = [(0.5,0.2)]
 forest_grass.add("tree1.png", 1.5, max_relpos=[0.2,0.2], min_relpos=[-0.2,-0.2])
 
@@ -38,8 +38,8 @@ bush.add("tree10.png", max_relpos=[0.4,0.4], min_relpos=[-0.4,-0.4])
 
 
 village = DistributionDescriptor("village", ["Grass", "Snow", "Sand"])
-village.homogeneity = 0.4
-village.zones_spread = [(0.5,0.01)]
+village.homogeneity = 0.5 #xxmettre une option pour empecher les filaments (nmax de villages par distributor)
+village.zones_spread = [(0.8,0.01), (0.2,0.01)]
 village.add("house0.png", 1.2, min_relpos=[0,0.01], max_relpos=[0,0.15])
 
 

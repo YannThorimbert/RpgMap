@@ -17,7 +17,7 @@ def generate_map():
     mi = MapInitializer("First demo map")
 ##    mi.chunk = (random.randint(0,1000), random.randint(0,1000))
     mi.seed = (1310,15)
-    mi.chunk_size = (32,32) #size of a chunk
+    mi.chunk_size = (64,64) #size of a chunk
 ##    mi.set_terrain_type(terrain_plains, colorscale_normal)
     #dont forget to adapt terrain and colorscale to the actual map generated.
     mi.set_terrain_type(terrain_medium, colorscale_normal)
@@ -25,7 +25,7 @@ def generate_map():
     mi.max_number_of_rivers = 4
     mi.min_river_length = 12
 ##    mi.zoom_cell_sizes = [32, 16] #two zoom levels
-    mi.zoom_cell_sizes = [32] #one zoom level
+    mi.zoom_cell_sizes = [64] #one zoom level
     me = mi.configure_map_editor(FPS) #me = "Map Editor"
     img = me.get_hmap_img((mi.chunk_size[0]*10,mi.chunk_size[1]*10))
     return me, img, mi
@@ -86,27 +86,22 @@ m.play()
 
 app.quit()
 
-#quand une nouvelle submap est construire, remettre tous les objets de bordure des submaps adjacentes à blit_on_border = False,
-#parce qu'ils ont été mis a True lorsque la surface etait pas construite
 
-#mais trop lent quand meme !
+#CAMPAGNE DE DEBOGUAGE FONDAMENTAL
 
-#lm.static_objects est vide
-
-#faire un tag par submap ?
-#cam ne touche pas à mapgrid tant que lm.t n'a pas changé! ==> cam.last_t
-
-##PK CLIGNOTE ? : seulement aux frontieres. clignote parce que chevauche des fois pas.
-#mystère des rivières
-
-#camera : a chaque appel de control_objs, construire la liste de ceux qui doivent etre rechecks (done + border_done)
+#F)
 ##checker les xx
-#blit_static_objects_border appellé inutilement plusieurs fois par frame, une seule suffit. ==> juste boolean pour le moment, apres on peut maintenir une liste de todo
 
-#!!!!!m
+
+#CAMPAGNE DE NETTOYAGE FONDAMENTAL
+
+#voir xx custom
+
+#lac de riviere doit pas avoir de cellules voisines a une riviere....
+
+#blit_intelligent a enormément d'overlaps ! comment les éviter ?
+
 #tous les objets sont toujours statiques. a chaque fois qu'on pose un objet, on reblitte les voisins. que des petites listes a trier.
-
-#arbres peut sembler dans riviere a cause de relpos (ou riviere dans arbre)
 
 #map slownesses : centralisees dans structure a part
 #synchro des frames eau
